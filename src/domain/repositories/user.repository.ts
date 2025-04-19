@@ -8,7 +8,11 @@ export interface UserRepository {
   }): Promise<void>;
 
   // Check
-  isAvailable(email: string): Promise<boolean>;
+  isAvailable(unique: {
+    email?: string;
+    document?: { type: "DNI"; number: string };
+    phone?: string;
+  }): Promise<null | "email" | "dni" | "phone">;
   isEmailVerified(id: string): Promise<boolean>;
   isTwoFactorEnabled(id: string): Promise<boolean>;
 
