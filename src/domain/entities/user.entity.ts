@@ -9,6 +9,7 @@ interface UserIdentifier {
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
   phone: string;
+  lastIp?: string;
 
   // Logs
   lastLogin?: Date;
@@ -42,8 +43,8 @@ interface UserProfile {
   wallets: string[];
 
   // Experience
-  investmentExperience: "none" | "basic" | "intermediate" | "advanced";
-  riskTolerance: "low" | "medium" | "high";
+  investmentExperience?: "none" | "basic" | "intermediate" | "advanced";
+  riskTolerance?: "low" | "medium" | "high";
 }
 
 export type { UserIdentifier, UserProfile };

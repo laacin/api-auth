@@ -29,6 +29,7 @@ export interface UserRepository {
   saveTwoFactorSecret(id: string, secret: string): Promise<void>;
   verifyEmail(id: string): Promise<void>;
   updateProfile(profile: UserProfile): Promise<void>;
+  newLogin(id: string, time: Date): Promise<void>;
 
   // Delete
   deleteAccount(id: string): Promise<void>;
