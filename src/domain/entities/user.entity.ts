@@ -8,6 +8,7 @@ interface UserIdentifier {
   emailVerified: boolean;
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
+  phone: string;
 
   // Logs
   lastLogin?: Date;
@@ -20,17 +21,16 @@ interface UserProfile {
   // Identifier
   id: string;
 
+  // Identity
+  documentType: "DNI";
+  documentNumber: string;
+  nationality: string;
+
   // Personal info
   firstname: string;
   lastname: string;
   birthdate: string;
   gender: "male" | "female";
-  phone: string;
-
-  // Identity
-  documentType: "DNI";
-  documentNumber: string;
-  nationality: string;
 
   // Address
   address: string;
