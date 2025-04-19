@@ -1,4 +1,4 @@
 export interface IdService {
-  create(): void;
+  create(): string;
   verify(): boolean;
 }

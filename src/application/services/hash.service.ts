@@ -1,4 +1,4 @@
 export interface HashService {
-  generate(): Promise<string>;
-  compare(): Promise<boolean>;
+  generate(plain: string): Promise<string>;
+  compare(plain: string, hash: string): Promise<boolean>;
 }
