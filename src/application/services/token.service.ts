@@ -1,4 +1,4 @@
 export interface TokenService {
-  idToken(id: string): Promise<string>;
-  verifyIdToken(id: string): Promise<string>;
+  newToken(id: string): Promise<string>;
+  verifyToken(token: string): Promise<string>;
 }
