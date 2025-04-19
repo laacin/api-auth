@@ -5,7 +5,6 @@ interface UserIdentifier {
   password: string;
 
   // Security
-  phone: string;
   emailVerified: boolean;
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
@@ -26,6 +25,7 @@ interface UserProfile {
   lastname: string;
   birthdate: string;
   gender: "male" | "female";
+  phone: string;
 
   // Identity
   documentType: "DNI";
