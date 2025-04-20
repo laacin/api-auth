@@ -25,4 +25,3 @@ export default defineConfig([
     extends: ["json/recommended"],
   },
 ]);
-

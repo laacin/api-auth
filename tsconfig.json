@@ -7,7 +7,7 @@
 
     /* Modules */
     "module": "ESNext",
-    "rootDir": "./src",
+    // "rootDir": "./src",
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
@@ -22,7 +22,7 @@
 
     /* Emit */
     "noEmit": true,
-    "outDir": "./dist",
+    // "outDir": "./dist",
     "removeComments": true,
 
     /* Interop Constraints */
