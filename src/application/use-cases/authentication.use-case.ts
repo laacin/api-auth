@@ -4,6 +4,7 @@ import type {
   TokenService,
 } from "@application/services";
 import type { UserIdentifier, UserProfile } from "@domain/entities";
+import { AppErr, ErrGeneric, ErrUserAuth, ErrUserRecovery } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
 
 export class AuthenticationUseCase {
@@ -20,7 +21,7 @@ export class AuthenticationUseCase {
   async createAccount(
     identifier: Omit<UserIdentifier, "id">,
     profile: Omit<UserProfile, "id">,
-  ) {
+  ): Promise<void> {
     try {
       // Check if exists
       const conflict = await this.userRepo.isAvailable({
@@ -34,13 +35,13 @@ export class AuthenticationUseCase {
       if (conflict) {
         switch (conflict) {
           case "email":
-            return new Error("email is already used");
-          case "dni":
-            return new Error("an account with this DNI is already exists");
+            throw ErrUserAuth.emailExists();
+          case "dni": // TODO: <-- fix name
+            throw ErrUserAuth.idExists();
           case "phone":
-            return new Error("phone number is already used");
+            throw ErrUserAuth.phoneExists();
           default:
-            return new Error("Unexpected conflict error");
+            throw ErrGeneric.internal("Unexpected conflict error");
         }
       }
 
@@ -50,11 +51,17 @@ export class AuthenticationUseCase {
 
       const uIdent: UserIdentifier = {
         id: uuid,
+
+        // Identifier
         email: identifier.email,
-        phone: identifier.phone,
         password: await this.hashSvc.generate(identifier.password),
+
+        // Security
+        phone: identifier.phone,
         emailVerified: false,
         twoFactorAuth: false,
+
+        // Logs
         createdAt: now,
         updatedAt: now,
       };
@@ -85,24 +92,28 @@ export class AuthenticationUseCase {
       // Try to save
       await this.userRepo.newUser({ identifier: uIdent, profile: uProf });
     } catch (err) {
-      throw err instanceof Error ? err : err;
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
   }
 
-  async login(login: { email: string; ip: string; password: string }) {
+  async login(login: {
+    email: string;
+    ip: string;
+    password: string;
+  }): Promise<string> {
     try {
       // Get user
       const u = await this.userRepo.getUserByEmail(login.email);
 
       // Compare credentials
       if (!u || !(await this.hashSvc.compare(login.password, u.password))) {
-        throw new Error("Invalid email or password");
+        throw ErrUserAuth.invalidAuth();
       }
 
       // 2FA
       if (u.twoFactorAuth) {
         if (!u.lastIp || login.ip !== u.lastIp) {
-          throw new Error("2FA required");
+          throw ErrUserAuth.required2FA();
         }
       }
 
@@ -110,9 +121,37 @@ export class AuthenticationUseCase {
       await this.userRepo.newLogin(u.id, new Date());
 
       // Token
-      const token = await this.tokenSvc.idToken(u.id);
+      const token = await this.tokenSvc.newToken(u.id);
 
       return token;
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
+    }
+  }
+
+  async emailVerificationToken(email: string): Promise<string> {
+    try {
+      // Get user
+      const u = await this.userRepo.getUserByEmail(email);
+      if (!u) throw ErrUserAuth.invalidAuth(); // <--- wrong error
+
+      // Check is already verified
+      if (u.emailVerified) throw ErrUserRecovery.emailIsAlreadyVerified();
+
+      // Token
+      return await this.tokenSvc.newToken(u.id);
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
+    }
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    try {
+      // Verify token
+      const id = await this.tokenSvc.verifyToken(token);
+
+      // try to verify
+      await this.userRepo.verifyEmail(id);
     } catch (err) {
       throw err instanceof Error ? err : err;
     }
