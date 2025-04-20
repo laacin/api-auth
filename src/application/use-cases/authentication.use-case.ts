@@ -129,11 +129,11 @@ export class AuthenticationUseCase {
     }
   }
 
-  async emailVerificationToken(email: string): Promise<string> {
+  async emailVerificationToken(id: string): Promise<string> {
     try {
       // Get user
-      const u = await this.userRepo.getUserByEmail(email);
-      if (!u) throw ErrUserAuth.invalidAuth(); // <--- wrong error
+      const u = await this.userRepo.getUserById(id);
+      if (!u) throw ErrGeneric.internal("Unexpected undefined user");
 
       // Check is already verified
       if (u.emailVerified) throw ErrUserRecovery.emailIsAlreadyVerified();
