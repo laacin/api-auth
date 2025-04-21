@@ -1,50 +1,53 @@
-interface UserIdentifier {
-  // Identifier
+export interface User {
+  // Main ID
   id: string;
-  email: string;
-  password: string;
+
+  // Identifier
+  identifier: {
+    identityNumber: string;
+    email: string;
+    password: string;
+  };
 
   // Security
-  emailVerified: boolean;
-  twoFactorAuth: boolean;
-  twoFactorSecret?: string;
-  phone: string;
-  lastIp?: string;
+  security: {
+    emailVerified: boolean;
+    twoFactorAuth: boolean;
+    twoFactorSecret?: string;
+    lastIp?: string;
+  };
+
+  // Permissions
+  permissions: string[];
+
+  // Personal Info
+  profile: {
+    personalInfo: {
+      firstname: string;
+      lastname: string;
+      birthdate: Date;
+      nationality: string;
+      gender?: string;
+    };
+
+    address: {
+      address: string;
+      postalCode: string;
+      province: string;
+      city: string;
+    };
+
+    experience?: {
+      investmentExperience: "none" | "basic" | "intermediate" | "advanced";
+      riskTolerance: "low" | "medium" | "high";
+    };
+  };
 
   // Logs
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
+  logs: {
+    lastLogin?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+  };
 }
-
-interface UserProfile {
-  // Identifier
-  id: string;
-
-  // Identity
-  documentType: "DNI";
-  documentNumber: string;
-  nationality: string;
-
-  // Personal info
-  firstname: string;
-  lastname: string;
-  birthdate: string;
-  gender: "male" | "female";
-
-  // Address
-  address: string;
-  postalCode: string;
-  province: string;
-  city: string;
-
-  // Wallets
-  wallets: string[];
-
-  // Experience
-  investmentExperience?: "none" | "basic" | "intermediate" | "advanced";
-  riskTolerance?: "low" | "medium" | "high";
-}
-
-export type { UserIdentifier, UserProfile };
