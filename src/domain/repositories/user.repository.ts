@@ -1,34 +1,27 @@
-import type { UserIdentifier, UserProfile } from "@domain/entities";
+import type { User, UserIdentifier } from "@domain/entities";
 
 export interface UserRepository {
   // Create
-  newUser(user: {
-    identifier: UserIdentifier;
-    profile: UserProfile;
-  }): Promise<void>;
+  newUser(user: User): Promise<void>;
 
   // Check
-  isAvailable(unique: {
-    email?: string;
-    document?: { type: "DNI"; number: string };
-    phone?: string;
-  }): Promise<null | "email" | "dni" | "phone">;
+  isAvailable(
+    check: Partial<UserIdentifier>,
+  ): Promise<undefined | "email" | "identity_id">;
   isEmailVerified(id: string): Promise<boolean>;
   isTwoFactorEnabled(id: string): Promise<boolean>;
 
   // Read
-  getUserById(id: string): Promise<UserIdentifier>;
-  getUserByEmail(email: string): Promise<UserIdentifier>;
+  getUserById<T>(id: string, which?: T): Promise<T>;
+  getUserByIdentityId<T>(identityId: string, which?: T): Promise<T>;
+  getUserByEmail<T>(email: string, which?: T): Promise<T>;
   getTwoFactorSecret(id: string): Promise<string>;
-  getProfile(id: string): Promise<UserProfile>;
 
   // Update
   changeEmail(id: string, email: string): Promise<void>;
   changePassword(id: string, password: string): Promise<void>;
-  changePhone(id: string, phone: string): Promise<void>;
   saveTwoFactorSecret(id: string, secret: string): Promise<void>;
   verifyEmail(id: string): Promise<void>;
-  updateProfile(profile: UserProfile): Promise<void>;
   newLogin(id: string, time: Date): Promise<void>;
 
   // Delete
