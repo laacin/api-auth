@@ -2,7 +2,7 @@ import type { User, UserIdentifier } from "@domain/entities";
 
 export interface UserRepository {
   // Create
-  newUser(user: User): Promise<void>;
+  saveUser(user: User): Promise<void>;
 
   // Check
   isAvailable(
@@ -12,9 +12,36 @@ export interface UserRepository {
   isTwoFactorEnabled(id: string): Promise<boolean>;
 
   // Read
-  getUserById<T>(id: string, which?: T): Promise<T>;
-  getUserByIdentityId<T>(identityId: string, which?: T): Promise<T>;
-  getUserByEmail<T>(email: string, which?: T): Promise<T>;
+  getUserById(id: string): Promise<User | undefined>;
+  getUserById<K extends keyof User>(
+    id: string,
+    which?: K,
+  ): Promise<User[K] | undefined>;
+  getUserById<K extends keyof User>(
+    id: string,
+    ...which: K[]
+  ): Promise<Pick<User, K> | undefined>;
+
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByEmail<K extends keyof User>(
+    email: string,
+    which?: K,
+  ): Promise<User[K] | undefined>;
+  getUserByEmail<K extends keyof User>(
+    email: string,
+    ...which: K[]
+  ): Promise<Pick<User, K> | undefined>;
+
+  getUserByIdentityNumber(identityNumber: string): Promise<User | undefined>;
+  getUserByIdentityNumber<K extends keyof User>(
+    identityNumber: string,
+    which?: K,
+  ): Promise<User[K] | undefined>;
+  getUserByIdentityNumber<K extends keyof User>(
+    identityNumber: string,
+    ...which: K[]
+  ): Promise<Pick<User, K> | undefined>;
+
   getTwoFactorSecret(id: string): Promise<string>;
 
   // Update
