@@ -1,53 +1,64 @@
+// MAIN USER
 export interface User {
   // Main ID
   id: string;
 
-  // Identifier
-  identifier: {
-    identityNumber: string;
-    email: string;
-    password: string;
-  };
-
-  // Security
-  security: {
-    emailVerified: boolean;
-    twoFactorAuth: boolean;
-    twoFactorSecret?: string;
-    lastIp?: string;
-  };
-
-  // Permissions
+  // Modules
+  identifier: UserIdentifier;
+  security: UserSecurity;
   permissions: string[];
-
-  // Personal Info
-  profile: {
-    personalInfo: {
-      firstname: string;
-      lastname: string;
-      birthdate: Date;
-      nationality: string;
-      gender?: string;
-    };
-
-    address: {
-      address: string;
-      postalCode: string;
-      province: string;
-      city: string;
-    };
-
-    experience?: {
-      investmentExperience: "none" | "basic" | "intermediate" | "advanced";
-      riskTolerance: "low" | "medium" | "high";
-    };
-  };
-
-  // Logs
-  logs: {
-    lastLogin?: Date;
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt?: Date;
-  };
+  personalInfo: UserPersonalInfo;
+  address?: UserAddress;
+  experience?: UserExperience;
+  logs: UserLogs;
 }
+
+// Modules
+interface UserIdentifier {
+  identityNumber: string;
+  email: string;
+  password: string;
+}
+
+interface UserSecurity {
+  emailVerified: boolean;
+  twoFactorAuth: boolean;
+  twoFactorSecret?: string;
+  lastIp?: string;
+}
+
+interface UserPersonalInfo {
+  firstname: string;
+  lastname: string;
+  birthdate: Date;
+  nationality: string;
+  gender?: string;
+}
+
+interface UserAddress {
+  region: string;
+  postalCode: string;
+  city: string;
+  address: string;
+}
+
+interface UserExperience {
+  investmentExperience: "none" | "basic" | "intermediate" | "advanced";
+  riskTolerance: "low" | "medium" | "high";
+}
+
+interface UserLogs {
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
+
+export type {
+  UserIdentifier,
+  UserSecurity,
+  UserPersonalInfo,
+  UserAddress,
+  UserExperience,
+  UserLogs,
+};
