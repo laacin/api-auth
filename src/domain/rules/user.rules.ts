@@ -1,7 +1,11 @@
-import type { UserIdentifier, UserPersonalInfo } from "@domain/entities";
+import type {
+  UserAddress,
+  UserIdentifier,
+  UserPersonalInfo,
+} from "@domain/entities";
 import { patterns, type RulesFor } from "./types";
 
-export const userIdentifierRules: RulesFor<UserIdentifier> = {
+export const rulesUserIdentifier: RulesFor<UserIdentifier> = {
   email: {
     name: "email",
     type: "",
@@ -25,7 +29,7 @@ export const userIdentifierRules: RulesFor<UserIdentifier> = {
   },
 };
 
-export const userPersonalInfoRules: RulesFor<UserPersonalInfo> = {
+export const rulesUserInfo: RulesFor<UserPersonalInfo> = {
   firstname: {
     name: "firstname",
     type: "",
@@ -38,5 +42,43 @@ export const userPersonalInfoRules: RulesFor<UserPersonalInfo> = {
     type: "",
     minSize: 2,
     maxSize: 20,
+  },
+
+  birthdate: {
+    name: "birthdate",
+    type: "date",
+  },
+
+  nationality: {
+    name: "nationality",
+    type: "",
+  },
+
+  gender: {
+    name: "gender",
+    type: "",
+    optional: true,
+  },
+};
+
+export const rulesUserAddress: RulesFor<UserAddress> = {
+  region: {
+    name: "region",
+    type: "",
+  },
+
+  postalCode: {
+    name: "postal code",
+    type: "",
+  },
+
+  city: {
+    name: "city",
+    type: "",
+  },
+
+  address: {
+    name: "address",
+    type: "",
   },
 };
