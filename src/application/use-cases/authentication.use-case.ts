@@ -3,9 +3,16 @@ import type {
   IdService,
   TokenService,
 } from "@application/services";
-import type { UserIdentifier, UserProfile } from "@domain/entities";
+import type {
+  User,
+  UserAddress,
+  UserIdentifier,
+  UserPersonalInfo,
+  UserSecurity,
+} from "@domain/entities";
 import { AppErr, ErrGeneric, ErrUserAuth, ErrUserRecovery } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
+import { TokenType } from "@domain/security";
 
 export class AuthenticationUseCase {
   constructor(
@@ -17,111 +24,101 @@ export class AuthenticationUseCase {
     private readonly tokenSvc: TokenService,
   ) {}
 
-  // Methods
-  async createAccount(
-    identifier: Omit<UserIdentifier, "id">,
-    profile: Omit<UserProfile, "id">,
-  ): Promise<void> {
+  // ---- Register & Login
+  async createAccount(input: {
+    identifier: UserIdentifier;
+    personalInfo: UserPersonalInfo;
+    address: UserAddress;
+  }): Promise<void> {
     try {
       // Check if exists
-      const conflict = await this.userRepo.isAvailable({
-        email: identifier.email,
-        document: {
-          type: profile.documentType,
-          number: profile.documentNumber,
-        },
-        phone: identifier.phone,
-      });
+      const conflict = await this.userRepo.isAvailable(input.identifier);
       if (conflict) {
-        switch (conflict) {
-          case "email":
-            throw ErrUserAuth.emailExists();
-          case "dni": // TODO: <-- fix name
-            throw ErrUserAuth.idExists();
-          case "phone":
-            throw ErrUserAuth.phoneExists();
-          default:
-            throw ErrGeneric.internal("Unexpected conflict error");
-        }
+        if (conflict === "email") throw ErrUserAuth.emailExists();
+        if (conflict === "identity_id") throw ErrUserAuth.idExists();
       }
 
-      // Setup User
+      // Setup user
       const now = new Date();
-      const uuid = this.idSvc.create();
+      const user: User = {
+        id: this.idSvc.create(),
 
-      const uIdent: UserIdentifier = {
-        id: uuid,
+        logs: {
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: undefined,
+          lastLogin: undefined,
+        },
 
-        // Identifier
-        email: identifier.email,
-        password: await this.hashSvc.generate(identifier.password),
+        identifier: {
+          email: input.identifier.email,
+          identityNumber: input.identifier.identityNumber,
+          password: await this.hashSvc.generate(input.identifier.password),
+        },
 
-        // Security
-        phone: identifier.phone,
-        emailVerified: false,
-        twoFactorAuth: false,
+        security: {
+          emailVerified: false,
+          twoFactorAuth: false,
+        },
 
-        // Logs
-        createdAt: now,
-        updatedAt: now,
-      };
+        permissions: ["NOT_IMPLEMENTED"],
 
-      const uProf: UserProfile = {
-        id: uuid,
-
-        // Identity
-        documentType: profile.documentType,
-        documentNumber: profile.documentNumber,
-        nationality: profile.nationality,
-
-        // Personal info
-        firstname: profile.firstname,
-        lastname: profile.lastname,
-        birthdate: profile.birthdate,
-        gender: profile.gender,
-
-        // Address
-        address: profile.address,
-        postalCode: profile.postalCode,
-        province: profile.province,
-        city: profile.city,
-
-        wallets: [],
+        personalInfo: input.personalInfo,
+        address: input.address,
       };
 
       // Try to save
-      await this.userRepo.newUser({ identifier: uIdent, profile: uProf });
+      await this.userRepo.saveUser(user);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
   }
 
-  async login(login: {
-    email: string;
-    ip: string;
-    password: string;
-  }): Promise<string> {
+  async login(creds: Partial<UserIdentifier>, ip?: string): Promise<string> {
     try {
+      if (!creds.password) throw ErrUserAuth.invalidAuth();
+
       // Get user
-      const u = await this.userRepo.getUserByEmail(login.email);
+      let u:
+        | { id: string; identifier: UserIdentifier; security: UserSecurity }
+        | undefined;
+
+      if (creds.email) {
+        u = await this.userRepo.getUserByEmail(
+          creds.email,
+          "identifier",
+          "id",
+          "security",
+        );
+      } else if (creds.identityNumber) {
+        u = await this.userRepo.getUserByIdentityNumber(
+          creds.identityNumber,
+          "identifier",
+          "id",
+          "security",
+        );
+      }
 
       // Compare credentials
-      if (!u || !(await this.hashSvc.compare(login.password, u.password))) {
+      if (
+        !u ||
+        !(await this.hashSvc.compare(creds.password, u.identifier.password))
+      ) {
         throw ErrUserAuth.invalidAuth();
       }
 
       // 2FA
-      if (u.twoFactorAuth) {
-        if (!u.lastIp || login.ip !== u.lastIp) {
+      if (u.security.twoFactorAuth) {
+        if (u.security.lastIp && u.security.lastIp !== ip) {
           throw ErrUserAuth.required2FA();
         }
       }
 
-      // New login
-      await this.userRepo.newLogin(u.id, new Date());
+      // Generate token
+      const token = await this.tokenSvc.create(TokenType.AUTHENTICATION, u.id);
 
-      // Token
-      const token = await this.tokenSvc.newToken(u.id);
+      // Save login
+      await this.userRepo.newLogin(u.id, new Date());
 
       return token;
     } catch (err) {
@@ -129,31 +126,32 @@ export class AuthenticationUseCase {
     }
   }
 
+  // ---- Validate email
   async emailVerificationToken(id: string): Promise<string> {
     try {
       // Get user
-      const u = await this.userRepo.getUserById(id);
+      const u = await this.userRepo.getUserById(id, "security");
       if (!u) throw ErrGeneric.internal("Unexpected undefined user");
 
-      // Check is already verified
+      // Check if is already verified
       if (u.emailVerified) throw ErrUserRecovery.emailIsAlreadyVerified();
 
-      // Token
-      return await this.tokenSvc.newToken(u.id);
+      // Generate token
+      return await this.tokenSvc.create(TokenType.EMAIL_VALIDATION, id);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
   }
 
-  async verifyEmail(token: string): Promise<void> {
+  async emailVerify(token: string): Promise<void> {
     try {
-      // Verify token
-      const id = await this.tokenSvc.verifyToken(token);
+      // Check token
+      const payload = await this.tokenSvc.verifyToken(token);
+      if (payload.type !== TokenType.EMAIL_VALIDATION) return;
 
-      // try to verify
-      await this.userRepo.verifyEmail(id);
+      await this.userRepo.verifyEmail(payload.id);
     } catch (err) {
-      throw err instanceof Error ? err : err;
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
   }
 }
