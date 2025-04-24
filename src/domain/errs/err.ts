@@ -18,6 +18,41 @@ export class AppErr extends Error {
   ) {
     super(msg);
   }
+
+  // To HTTP
+  toHttp(): [number, string] {
+    switch (this.type) {
+      case TypeErr.INVALID_ARGUMENT:
+        return [400, this.message];
+
+      case TypeErr.VALIDATION:
+        return [400, this.message];
+
+      case TypeErr.UNAUTHENTICATED:
+        return [401, this.message];
+
+      case TypeErr.FORBIDDEN:
+        return [403, this.message];
+
+      case TypeErr.NOT_FOUND:
+        return [404, this.message];
+
+      case TypeErr.CONFLICT:
+        return [409, this.message];
+
+      case TypeErr.GONE:
+        return [410, this.message];
+
+      case TypeErr.INTERNAL:
+        return [500, "Internal server error"];
+
+      case TypeErr.NOT_IMPLEMENTED:
+        return [501, "Not implemented"];
+
+      default:
+        return [500, "Internal server error"];
+    }
+  }
 }
 
 // Error structure
