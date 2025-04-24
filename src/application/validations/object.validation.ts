@@ -1,5 +1,5 @@
 import type { RulesFor } from "@domain/rules/types";
-import { validateField } from "./field.validation";
+import validateField from "./field.validation";
 
 function validateObject<T>(
   rules: RulesFor<T>,

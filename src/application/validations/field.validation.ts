@@ -71,4 +71,4 @@ function validateField(
   return info ? null : true;
 }
 
-export { validateField };
+export default validateField;
