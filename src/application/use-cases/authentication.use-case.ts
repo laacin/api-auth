@@ -84,15 +84,15 @@ export class AuthenticationUseCase {
         | undefined;
 
       if (creds.email) {
-        u = await this.userRepo.getUserByEmail(
-          creds.email,
+        u = await this.userRepo.getUser(
+          { email: creds.email },
           "identifier",
           "id",
           "security",
         );
       } else if (creds.identityNumber) {
-        u = await this.userRepo.getUserByIdentityNumber(
-          creds.identityNumber,
+        u = await this.userRepo.getUser(
+          { identityNumber: creds.identityNumber },
           "identifier",
           "id",
           "security",
@@ -130,7 +130,7 @@ export class AuthenticationUseCase {
   async emailVerificationToken(id: string): Promise<string> {
     try {
       // Get user
-      const u = await this.userRepo.getUserById(id, "security");
+      const u = await this.userRepo.getUser({ id }, "security");
       if (!u) throw ErrGeneric.internal("Unexpected undefined user");
 
       // Check if is already verified
