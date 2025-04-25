@@ -35,7 +35,7 @@ export class AuthenticationUseCase {
       const conflict = await this.userRepo.isAvailable(input.identifier);
       if (conflict) {
         if (conflict === "email") throw ErrUserAuth.emailExists();
-        if (conflict === "identity_id") throw ErrUserAuth.idExists();
+        if (conflict === "identity_number") throw ErrUserAuth.idExists();
       }
 
       // Setup user
@@ -47,7 +47,6 @@ export class AuthenticationUseCase {
           createdAt: now,
           updatedAt: now,
           deletedAt: undefined,
-          lastLogin: undefined,
         },
 
         identifier: {
@@ -59,6 +58,7 @@ export class AuthenticationUseCase {
         security: {
           emailVerified: false,
           twoFactorAuth: false,
+          lastLogin: undefined,
         },
 
         permissions: ["NOT_IMPLEMENTED"],
@@ -134,7 +134,8 @@ export class AuthenticationUseCase {
       if (!u) throw ErrGeneric.internal("Unexpected undefined user");
 
       // Check if is already verified
-      if (u.emailVerified) throw ErrUserRecovery.emailIsAlreadyVerified();
+      if (u.security.emailVerified)
+        throw ErrUserRecovery.emailIsAlreadyVerified();
 
       // Generate token
       return await this.tokenSvc.create(TokenType.EMAIL_VALIDATION, id);
