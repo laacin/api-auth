@@ -12,21 +12,17 @@ export interface UserRepository {
   isTwoFactorEnabled(id: string): Promise<boolean>;
 
   // Read
-  getUserById(id: string): Promise<User | undefined>;
-  getUserById<K extends keyof User>(
-    id: string,
-    ...which: K[]
-  ): Promise<Pick<User, K> | undefined>;
-
-  getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByEmail<K extends keyof User>(
-    email: string,
-    ...which: K[]
-  ): Promise<Pick<User, K> | undefined>;
-
-  getUserByIdentityNumber(identityNumber: string): Promise<User | undefined>;
-  getUserByIdentityNumber<K extends keyof User>(
-    identityNumber: string,
+  getUser(identifier: {
+    id?: string;
+    email?: string;
+    identityNumber?: string;
+  }): Promise<User | undefined>;
+  getUser<K extends keyof User>(
+    identifier: {
+      id?: string;
+      email?: string;
+      identityNumber?: string;
+    },
     ...which: K[]
   ): Promise<Pick<User, K> | undefined>;
 
