@@ -1,10 +1,10 @@
 import type { RulesFor } from "@domain/rules/types";
-import validateField from "./field.validation";
+import { validateField } from "./field.validation";
 
-function validateObject<T>(
+const validateObject = <T>(
   rules: RulesFor<T>,
   target: Record<keyof T, unknown>,
-): string | null {
+): string | null => {
   const keys = Object.keys(rules);
 
   for (const k of keys) {
@@ -16,6 +16,6 @@ function validateObject<T>(
   }
 
   return null;
-}
+};
 
 export default validateObject;
