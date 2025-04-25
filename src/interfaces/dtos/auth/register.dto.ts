@@ -26,7 +26,7 @@ export class RegisterDto {
       identityNumber: identity_number,
       password,
     });
-    if (err) ErrUserAuth.invalidField(err);
+    if (err) throw ErrUserAuth.invalidField(err);
 
     // Get user personal info
     const { firstname, lastname, birthdate, nationality, gender } = data;
@@ -37,7 +37,7 @@ export class RegisterDto {
       nationality,
       gender,
     });
-    if (err) ErrUserAuth.invalidField(err);
+    if (err) throw ErrUserAuth.invalidField(err);
 
     // Get user address
     const { region, postal_code, city, address } = data;
@@ -47,7 +47,7 @@ export class RegisterDto {
       city,
       address,
     });
-    if (err) ErrUserAuth.invalidField(err);
+    if (err) throw ErrUserAuth.invalidField(err);
 
     // Setup DTO
     return new RegisterDto(
