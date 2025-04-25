@@ -7,16 +7,12 @@ export interface UserRepository {
   // Check
   isAvailable(
     check: Partial<UserIdentifier>,
-  ): Promise<undefined | "email" | "identity_id">;
+  ): Promise<undefined | "email" | "identity_number">;
   isEmailVerified(id: string): Promise<boolean>;
   isTwoFactorEnabled(id: string): Promise<boolean>;
 
   // Read
   getUserById(id: string): Promise<User | undefined>;
-  getUserById<K extends keyof User>(
-    id: string,
-    which?: K,
-  ): Promise<User[K] | undefined>;
   getUserById<K extends keyof User>(
     id: string,
     ...which: K[]
@@ -25,18 +21,10 @@ export interface UserRepository {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByEmail<K extends keyof User>(
     email: string,
-    which?: K,
-  ): Promise<User[K] | undefined>;
-  getUserByEmail<K extends keyof User>(
-    email: string,
     ...which: K[]
   ): Promise<Pick<User, K> | undefined>;
 
   getUserByIdentityNumber(identityNumber: string): Promise<User | undefined>;
-  getUserByIdentityNumber<K extends keyof User>(
-    identityNumber: string,
-    which?: K,
-  ): Promise<User[K] | undefined>;
   getUserByIdentityNumber<K extends keyof User>(
     identityNumber: string,
     ...which: K[]

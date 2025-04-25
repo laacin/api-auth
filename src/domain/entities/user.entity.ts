@@ -25,6 +25,7 @@ interface UserSecurity {
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
   lastIp?: string;
+  lastLogin?: Date;
 }
 
 interface UserPersonalInfo {
@@ -43,12 +44,11 @@ interface UserAddress {
 }
 
 interface UserExperience {
-  investmentExperience: "none" | "basic" | "intermediate" | "advanced";
-  riskTolerance: "low" | "medium" | "high";
+  investmentExperience: string;
+  riskTolerance: string;
 }
 
 interface UserLogs {
-  lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
