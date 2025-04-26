@@ -4,7 +4,7 @@ import { TokenServiceImpl } from "@infra/app-services/token.service.impl";
 import { IdServiceImpl } from "@infra/app-services/uuid.service.impl";
 import { connectMongo } from "@infra/database/connection";
 import { userModel } from "@infra/database/models";
-import { UserRepositoryImpl } from "@infra/database/repository";
+import { UserRepositoryImpl } from "@infra/database/repositories/user.repository";
 import { RequestImpl, ResponseImpl } from "@infra/http/context.http.impl";
 import { AuthControllers } from "@interfaces/controllers/auth.controllers";
 import express from "express";
@@ -13,7 +13,7 @@ const app = express();
 
 const main = async () => {
   try {
-    await connectMongo("mongodb://localhost:27017");
+    await connectMongo("mongodb://admin:passoword@localhost:27017")
 
     // Repository
     const repo = new UserRepositoryImpl(userModel);
@@ -45,7 +45,7 @@ const main = async () => {
     app.get("/user/:email", async (req, res) => {
       try {
         const email = req.params.email;
-        const u = await repo.getUserByEmail(email);
+        const u = await repo.getUser({email});
         if (!u) throw new Error("not found");
 
         res.status(200).json({ user: u });

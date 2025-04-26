@@ -12,6 +12,8 @@ export class AuthControllers {
       // Read body
       const dto = RegisterDto.create(req.body);
 
+      console.log(dto);
+
       // Use case
       await this.authUseCase.createAccount(dto);
 
