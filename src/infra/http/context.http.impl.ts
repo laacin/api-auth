@@ -1,12 +1,9 @@
 import { AppErr, ErrGeneric } from "@domain/errs";
 import type { Request, Response } from "@interfaces/http/context";
-import type {
-  Request as RequestExpress,
-  Response as ResponseExpress,
-} from "express";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 export class RequestImpl implements Request {
-  constructor(req: RequestExpress) {
+  constructor(req: IncomingMessage) {
     this.url = {
       path: req.url,
       params: req.params,
