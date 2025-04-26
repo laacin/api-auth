@@ -7,7 +7,8 @@ export interface Request {
   };
   method: string;
   userId: string;
-  body: Record<string, unknown>;
+  setUser(id: string): void;
+  body(): Promise<Record<string, unknown>>;
 }
 
 // ---- Response

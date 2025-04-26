@@ -10,7 +10,7 @@ export class AuthControllers {
   async register(req: Request, res: Response): Promise<void> {
     try {
       // Read body
-      const dto = RegisterDto.create(req.body);
+      const dto = RegisterDto.create(await req.body());
 
       console.log(dto);
 
@@ -28,7 +28,7 @@ export class AuthControllers {
   async login(req: Request, res: Response): Promise<void> {
     try {
       // Read body
-      const dto = LoginDto.create(req.body);
+      const dto = LoginDto.create(await req.body());
 
       // Use case
       const token = await this.authUseCase.login(dto.identifier);
