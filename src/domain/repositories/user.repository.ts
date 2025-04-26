@@ -36,5 +36,5 @@ export interface UserRepository {
   newLogin(id: string, time: Date): Promise<void>;
 
   // Delete
-  deleteAccount(id: string): Promise<void>;
+  deleteAccount(id: string, time: Date): Promise<void>;
 }
