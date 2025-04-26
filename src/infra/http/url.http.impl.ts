@@ -1,3 +1,5 @@
+import type { Request } from "@interfaces/http/context";
+
 // URL Properties =>
 type UrlProps =
   | { match: false }
@@ -8,7 +10,7 @@ type UrlProps =
     };
 
 // Read URL Method
-export function readUrl(absoluteUrl: string, provideUrl: string): UrlProps {
+export const readUrl = (absoluteUrl: string, provideUrl: string): UrlProps => {
   // Check is valid URLs
   if (!absoluteUrl.startsWith("/") || !provideUrl.startsWith("/")) {
     throw new Error("Invalid URL");
@@ -74,4 +76,13 @@ export function readUrl(absoluteUrl: string, provideUrl: string): UrlProps {
   }
 
   return { match: true, params, query };
-}
+};
+
+export const isMatchUrl = (req: Request, path: string): boolean => {
+  const result = readUrl(req.url.path, path);
+  if (!result.match) return false;
+
+  req.url.params = result.params;
+  req.url.query = result.query;
+  return true;
+};

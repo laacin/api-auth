@@ -1,18 +1,9 @@
 import { AppErr, ErrGeneric } from "@domain/errs";
 import type { Request, Response } from "@interfaces/http/context";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { bodyParser } from "./body-parser.http.impl";
 
 export class RequestImpl implements Request {
-  constructor(req: IncomingMessage) {
-    this.url = {
-      path: req.url,
-      params: req.params,
-      query: req.query as Record<string, string> | undefined,
-    };
-    this.method = req.method;
-    this.body = req.body;
-  }
-
   url: {
     path: string;
     params?: Record<string, string>;
@@ -20,44 +11,63 @@ export class RequestImpl implements Request {
   };
   method: string;
   userId: string = "";
-  body: Record<string, unknown>;
+
+  constructor(private req: IncomingMessage) {
+    this.url = {
+      path: req.url ?? "",
+    };
+    this.method = req.method ?? "";
+  }
+
+  async body(): Promise<Record<string, unknown>> {
+    return bodyParser(this.req);
+  }
+
+  setUser(id: string): void {
+    this.userId = id;
+  }
 }
 
 export class ResponseImpl implements Response {
-  constructor(private readonly res: ResponseExpress) {}
+  constructor(private readonly res: ServerResponse) {}
   sent?: boolean | undefined;
 
   sendSuccess(status: number, data?: unknown, message?: string): void {
     this.sent = true;
-    const chainRes = this.res.status(status);
 
     if (!data) {
-      chainRes.json({ status });
+      sendJson(this.res, status, { status });
       return;
     }
 
     if (typeof data === "string") {
-      chainRes.json({ status, message: data });
+      sendJson(this.res, status, { status, message: data });
       return;
     }
 
     if (!message) {
-      chainRes.json({ status, data });
+      sendJson(this.res, status, { status, data });
       return;
     }
 
-    chainRes.json({ status, data, message });
+    sendJson(this.res, status, { status, data, message });
   }
 
   sendError(status: number, message: string): void {
     this.sent = true;
-    this.res.status(status).json({ status, error: message });
+    sendJson(this.res, status, { status, error: message });
   }
 
   sendThrow(err: unknown): void {
     const appErr =
       err instanceof AppErr ? err : ErrGeneric.internal(String(err));
     const [status, msg] = appErr.toHttp();
-    this.res.status(status).json({ status, error: msg });
+    sendJson(this.res, status, { status, error: msg });
   }
 }
+
+// Helpers
+const sendJson = (res: ServerResponse, status: number, msg: unknown) => {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(msg));
+};
