@@ -1,7 +1,9 @@
 import type { User } from "@domain/entities";
 import { Document, model, Schema } from "mongoose";
 
-const UserSchema = new Schema<User & Document>(
+export type UserDocument = User & Document;
+
+const UserSchema = new Schema<UserDocument>(
   {
     _id: { type: String },
 

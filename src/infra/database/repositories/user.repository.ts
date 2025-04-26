@@ -1,9 +1,10 @@
 import type { User, UserIdentifier } from "@domain/entities";
 import type { UserRepository } from "@domain/repositories";
-import type { Document, Model } from "mongoose";
+import type { Model } from "mongoose";
+import type { UserDocument } from "../models";
 
 export class UserRepositoryImpl implements UserRepository {
-  constructor(private readonly model: Model<User & Document>) {}
+  constructor(private readonly model: Model<UserDocument>) {}
 
   // ---- Create
   async saveUser(user: User): Promise<void> {
@@ -72,7 +73,7 @@ export class UserRepositoryImpl implements UserRepository {
     ...which: K[]
   ): Promise<User | Pick<User, K> | undefined> {
     // Find user
-    let u: (User & Document) | null | undefined;
+    let u: UserDocument | null | undefined;
     if (identifier.id) {
       u = await this.model.findById(identifier.id);
     } else if (identifier.email) {
@@ -149,7 +150,7 @@ export class UserRepositoryImpl implements UserRepository {
 }
 
 // TODO: fix this =>
-const toEntity = (doc: User & Document): User => {
+const toEntity = (doc: UserDocument): User => {
   return {
     id: doc._id as string,
 
