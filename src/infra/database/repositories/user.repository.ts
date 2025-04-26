@@ -109,35 +109,35 @@ export class UserRepositoryImpl implements UserRepository {
     const u = await this.model.findByIdAndUpdate(id, {
       "identifier.email": email,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 
   async changePassword(id: string, password: string): Promise<void> {
     const u = await this.model.findByIdAndUpdate(id, {
       "identifier.password": password,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 
   async saveTwoFactorSecret(id: string, secret: string): Promise<void> {
     const u = await this.model.findByIdAndUpdate(id, {
       "security.twoFactorSecret": secret,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 
   async verifyEmail(id: string): Promise<void> {
     const u = await this.model.findByIdAndUpdate(id, {
       "security.emailVerified": true,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 
   async newLogin(id: string, time: Date): Promise<void> {
     const u = await this.model.findByIdAndUpdate(id, {
       "security.lastLogin": time,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 
   // Delete
@@ -145,7 +145,7 @@ export class UserRepositoryImpl implements UserRepository {
     const u = await this.model.findByIdAndUpdate(id, {
       "logs.deletedAt": time,
     });
-    if (!u) throw new Error("Invalid user ID");
+    if (!u) throw invalidId;
   }
 }
 
@@ -190,3 +190,6 @@ const toEntity = (doc: UserDocument): User => {
     },
   };
 };
+
+// Error
+const invalidId = new Error("Invalid user ID");
