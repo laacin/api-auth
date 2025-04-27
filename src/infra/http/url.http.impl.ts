@@ -10,7 +10,21 @@ type UrlProps =
     };
 
 // Read URL Method
-export const readUrl = (absoluteUrl: string, provideUrl: string): UrlProps => {
+function readUrl(
+  absoluteUrl: string,
+  provideUrl: string,
+  getParameters: false,
+): boolean;
+function readUrl(
+  absoluteUrl: string,
+  provideUrl: string,
+  getParameters: true,
+): UrlProps;
+function readUrl(
+  absoluteUrl: string,
+  provideUrl: string,
+  getParameters: boolean,
+): boolean | UrlProps {
   // Check is valid URLs
   if (!absoluteUrl.startsWith("/") || !provideUrl.startsWith("/")) {
     throw new Error("Invalid URL");
@@ -20,69 +34,90 @@ export const readUrl = (absoluteUrl: string, provideUrl: string): UrlProps => {
   const absoluteSplit = absoluteUrl.slice(1).split("/");
   const provideSplit = provideUrl.slice(1).split("/");
 
+  // Check if match
+  if (absoluteSplit.length !== provideSplit.length) {
+    return getParameters ? { match: false } : false;
+  }
+  const len = absoluteSplit.length;
+
+  for (let i = 0; i < len; i++) {
+    const [absolute, provide] = pathSegments(i, absoluteSplit, provideSplit);
+
+    // Skip parameter
+    if (provide.startsWith(":")) continue;
+
+    // Compare segments
+    if (absolute.split("?")[0] !== provide) {
+      return getParameters ? { match: false } : false;
+    }
+  }
+
+  if (!getParameters) return true;
+
   // Query and parameters container
   const params: Record<string, string> = {};
   const query: Record<string, string> = {};
 
-  // Check if match
-  if (absoluteSplit.length !== provideSplit.length) {
-    return { match: false };
-  }
+  // Save Parameters
+  for (let i = 0; i < len; i++) {
+    const [absolute, provide] = pathSegments(i, absoluteSplit, provideSplit);
 
-  for (let i = 0; i < absoluteSplit.length; i++) {
-    const absSegment = absoluteSplit[i];
-    const prvSegment = provideSplit[i];
-    if (!absSegment || !prvSegment) {
-      throw new Error("Unexpected error reading URL");
+    // Params
+    if (provide.startsWith(":")) {
+      if (i === len - 1) {
+        params[provide.slice(1)] = absolute.split("?")[0] ?? "";
+      } else {
+        params[provide.slice(1)] = absolute;
+      }
     }
 
-    // Save and skip parameter
-    if (prvSegment?.startsWith(":")) {
-      const value = absSegment.split("?")[0];
-      if (value) {
-        params[prvSegment.slice(1)] = value;
+    // Query
+    if (i === len - 1) {
+      const urlQuery = absolute.split("?")[1];
+      if (!urlQuery) continue;
+
+      const keyValues = urlQuery.split("&");
+      for (const kv of keyValues) {
+        const [key, value] = kv.split("=");
+        if (key && value) {
+          query[key] = value;
+        }
       }
-
-      if (i < absoluteSplit.length - 1) continue;
-    }
-
-    // Get query if exists
-    if (i === absoluteSplit.length - 1) {
-      // Check final segment
-      const [finalSeg, urlQuery] = absSegment.split("?");
-      if (
-        !finalSeg ||
-        (!prvSegment.startsWith(":") && finalSeg !== prvSegment)
-      ) {
-        return { match: false };
-      }
-
-      // Save query if exists
-      if (!urlQuery) break;
-
-      for (const q of urlQuery.split("&")) {
-        const [key, value] = q.split("=");
-        if (!key || !value) continue;
-        query[key] = value;
-      }
-
-      break;
-    }
-
-    // Compare segments
-    if (absSegment !== prvSegment) {
-      return { match: false };
     }
   }
 
   return { match: true, params, query };
-};
+}
 
-export const isMatchUrl = (req: Request, path: string): boolean => {
-  const result = readUrl(req.url.path, path);
+export const isMatchUrl = (
+  req: Request,
+  path: string,
+  bindParameters?: boolean,
+): boolean => {
+  if (!bindParameters) return readUrl(req.url.path, path, false);
+
+  const result = readUrl(req.url.path, path, true);
   if (!result.match) return false;
 
   req.url.params = result.params;
   req.url.query = result.query;
   return true;
 };
+
+// Helpers
+const pathSegments = (
+  iteration: number,
+  absolutePath: string[],
+  providePath: string[],
+): [string, string] => {
+  const abs = absolutePath[iteration];
+  const prv = providePath[iteration];
+
+  if (!abs || !prv) {
+    throw new Error("Unexpected error reading URL");
+  }
+
+  return [abs, prv];
+};
+
+export { readUrl };
