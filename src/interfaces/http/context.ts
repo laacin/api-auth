@@ -13,7 +13,7 @@ export interface Request {
 
 // ---- Response
 export interface Response {
-  sent?: boolean;
+  sent: boolean;
   sendSuccess(status: number, data: unknown, message?: string): void;
   sendError(status: number, message: string): void;
   sendThrow(err: unknown): void;
