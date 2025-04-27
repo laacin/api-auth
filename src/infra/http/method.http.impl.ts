@@ -8,6 +8,6 @@ export enum MethodHttp {
   DELETE = "DELETE",
 }
 
-export const isMathMethod = (req: Request, method: MethodHttp): boolean => {
+export const isMatchMethod = (req: Request, method: MethodHttp): boolean => {
   return req.method === method;
 };

@@ -1,17 +1,16 @@
 import type { Request, Response } from "@interfaces/http/context";
-import { isMathMethod, MethodHttp } from "./method.http.impl";
+import { isMatchMethod, MethodHttp } from "./method.http.impl";
 import { execControllers, type Controller } from "./controllers.http.impl";
-import { isMatchUrl } from "./url.http.impl";
+import { isMatchUrl, setUrlProperties } from "./url.http.impl";
 
-interface Route {
-  path: string;
+interface Endpoint {
   method: MethodHttp;
   controllers: Controller[];
 }
 
 export class Router {
   private readonly subRouters: Router[] = [];
-  private readonly routes: Route[] = [];
+  private readonly routes = new Map<string, Endpoint[]>();
 
   private constructor(
     private readonly req: Request,
@@ -46,12 +45,13 @@ export class Router {
     path: string,
     ...controllers: Controller[]
   ): void {
-    const route: Route = {
-      path: this.mainPath + path,
-      method: method,
-      controllers: controllers,
-    };
-    this.routes.push(route);
+    const absPath = this.mainPath + path;
+    if (this.routes.has(absPath)) {
+      const endpoints = this.routes.get(absPath);
+      endpoints?.push({ method, controllers });
+    } else {
+      this.routes.set(absPath, [{ method, controllers }]);
+    }
   }
 
   // Middleware method
@@ -80,39 +80,39 @@ export class Router {
     this.registerRoute(MethodHttp.DELETE, path, ...controllers);
   }
 
-  private handle(): boolean {
+  // Handle request
+  execute(): void {
     // Check if is already sent
-    if (this.res.sent) return true;
+    if (this.res.sent) return;
 
     // Middlewares
     execControllers(this.req, this.res, this.middlewares);
 
     // Routes
-    for (const route of this.routes) {
-      if (!isMathMethod(this.req, route.method)) continue;
-      if (!isMatchUrl(this.req, route.path)) continue;
-      execControllers(this.req, this.res, route.controllers);
-    }
+    for (const [path, endpoints] of this.routes) {
+      // Check URL
+      if (!isMatchUrl(this.req, path)) continue;
 
-    for (const sub of this.subRouters) {
-      if (sub.handle()) return true;
-    }
-
-    return false;
-  }
-
-  private notMatch(): void {
-    for (const route of this.routes) {
-      if (isMatchUrl(this.req, route.path, false)) {
-        this.res.sendError(405, "Method not allowed");
-        return;
+      // Check method
+      for (const end of endpoints) {
+        if (isMatchMethod(this.req, end.method)) {
+          // Matched! setup controllers =>
+          setUrlProperties(this.req, path);
+          execControllers(this.req, this.res, end.controllers);
+          return;
+        }
       }
 
-      this.res.sendError(404, "Not found");
+      // 405 Error
+      this.res.sendError(405, "Not method allowed");
+      return;
     }
-  }
 
-  execute(): void {
-    if (!this.handle()) this.notMatch();
+    // Exec sub routers
+    for (const sub of this.subRouters) {
+      sub.execute();
+    }
+
+    this.res.sendError(404, "Not found");
   }
 }

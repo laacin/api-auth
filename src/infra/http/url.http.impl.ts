@@ -1,42 +1,19 @@
 import type { Request } from "@interfaces/http/context";
 
-// URL Properties =>
-type UrlProps =
-  | { match: false }
-  | {
-      match: true;
-      params: Record<string, string>;
-      query: Record<string, string>;
-    };
-
 // Read URL Method
-function readUrl(
-  absoluteUrl: string,
-  provideUrl: string,
-  getParameters: false,
-): boolean;
-function readUrl(
-  absoluteUrl: string,
-  provideUrl: string,
-  getParameters: true,
-): UrlProps;
-function readUrl(
-  absoluteUrl: string,
-  provideUrl: string,
-  getParameters: boolean,
-): boolean | UrlProps {
+export const isMatchUrl = (req: Request, path: string): boolean => {
   // Check is valid URLs
-  if (!absoluteUrl.startsWith("/") || !provideUrl.startsWith("/")) {
+  if (!req.url.path.startsWith("/") || !path.startsWith("/")) {
     throw new Error("Invalid URL");
   }
 
   // Split URLs
-  const absoluteSplit = absoluteUrl.slice(1).split("/");
-  const provideSplit = provideUrl.slice(1).split("/");
+  const absoluteSplit = req.url.path.slice(1).split("/");
+  const provideSplit = path.slice(1).split("/");
 
   // Check if match
   if (absoluteSplit.length !== provideSplit.length) {
-    return getParameters ? { match: false } : false;
+    return false;
   }
   const len = absoluteSplit.length;
 
@@ -48,11 +25,18 @@ function readUrl(
 
     // Compare segments
     if (absolute.split("?")[0] !== provide) {
-      return getParameters ? { match: false } : false;
+      return false;
     }
   }
 
-  if (!getParameters) return true;
+  return true;
+};
+
+export const setUrlProperties = (req: Request, path: string): void => {
+  // Split URLs
+  const absoluteSplit = req.url.path.slice(1).split("/");
+  const provideSplit = path.slice(1).split("/");
+  const len = absoluteSplit.length;
 
   // Query and parameters container
   const params: Record<string, string> = {};
@@ -86,22 +70,8 @@ function readUrl(
     }
   }
 
-  return { match: true, params, query };
-}
-
-export const isMatchUrl = (
-  req: Request,
-  path: string,
-  bindParameters?: boolean,
-): boolean => {
-  if (!bindParameters) return readUrl(req.url.path, path, false);
-
-  const result = readUrl(req.url.path, path, true);
-  if (!result.match) return false;
-
-  req.url.params = result.params;
-  req.url.query = result.query;
-  return true;
+  req.url.params = params;
+  req.url.query = query;
 };
 
 // Helpers
@@ -119,5 +89,3 @@ const pathSegments = (
 
   return [abs, prv];
 };
-
-export { readUrl };
