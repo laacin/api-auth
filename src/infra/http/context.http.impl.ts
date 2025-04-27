@@ -30,9 +30,10 @@ export class RequestImpl implements Request {
 
 export class ResponseImpl implements Response {
   constructor(private readonly res: ServerResponse) {}
-  sent?: boolean | undefined;
+  sent: boolean = false;
 
   sendSuccess(status: number, data?: unknown, message?: string): void {
+    if (this.sent) return;
     this.sent = true;
 
     if (!data) {
@@ -54,11 +55,15 @@ export class ResponseImpl implements Response {
   }
 
   sendError(status: number, message: string): void {
+    if (this.sent) return;
     this.sent = true;
     sendJson(this.res, status, { status, error: message });
   }
 
   sendThrow(err: unknown): void {
+    if (this.sent) return;
+    this.sent = true;
+
     const appErr =
       err instanceof AppErr ? err : ErrGeneric.internal(String(err));
     const [status, msg] = appErr.toHttp();
