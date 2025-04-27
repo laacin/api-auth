@@ -9,7 +9,7 @@ export type Controller = (
 export const execControllers = (
   req: Request,
   res: Response,
-  ...controllers: Controller[]
+  controllers: Controller[],
 ): void => {
   let index = 0;
 
