@@ -5,6 +5,6 @@ export enum TokenType {
 }
 
 export interface TokenPayload {
+  sub: string;
   type: TokenType;
-  id: string;
 }
