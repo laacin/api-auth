@@ -1,5 +1,6 @@
 // ---- Request
 export interface Request {
+  token: string | undefined;
   url: {
     path: string;
     params?: Record<string, string>;
