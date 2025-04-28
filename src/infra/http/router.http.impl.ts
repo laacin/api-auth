@@ -81,12 +81,13 @@ export class Router {
   }
 
   // Handle request
-  execute(): void {
+  async execute(): Promise<void> {
     // Check if is already sent
     if (this.res.sent) return;
 
     // Middlewares
-    execControllers(this.req, this.res, this.middlewares);
+    await execControllers(this.req, this.res, this.middlewares);
+    if (this.res.sent) return;
 
     // Routes
     for (const [path, endpoints] of this.routes) {
@@ -98,7 +99,7 @@ export class Router {
         if (isMatchMethod(this.req, end.method)) {
           // Matched! setup controllers =>
           setUrlProperties(this.req, path);
-          execControllers(this.req, this.res, end.controllers);
+          await execControllers(this.req, this.res, end.controllers);
           return;
         }
       }
@@ -110,7 +111,7 @@ export class Router {
 
     // Exec sub routers
     for (const sub of this.subRouters) {
-      sub.execute();
+      if (!this.res.sent) await sub.execute();
     }
 
     if (!this.res.sent) {
