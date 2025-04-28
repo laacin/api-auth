@@ -98,4 +98,13 @@ export class ErrGeneric extends AppErr {
   static gone(): AppErr {
     return new AppErr(TypeErr.GONE, "This resource not longer exists");
   }
+
+  // ---- Token errors
+  static missingToken(): AppErr {
+    return new AppErr(TypeErr.FORBIDDEN, "Missing token");
+  }
+
+  static invalidToken(): AppErr {
+    return new AppErr(TypeErr.FORBIDDEN, "Invalid token");
+  }
 }

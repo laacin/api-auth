@@ -14,22 +14,18 @@ export class ErrUserAuth extends AppErr {
     return new AppErr(TypeErr.UNAUTHENTICATED, "Two factor auth is required");
   }
 
-  static missingToken(): AppErr {
-    return new AppErr(TypeErr.UNAUTHENTICATED, "Missing token");
-  }
-
-  static invalidToken(): AppErr {
-    return new AppErr(TypeErr.UNAUTHENTICATED, "Invalid token");
+  static authExpired(): AppErr {
+    return new AppErr(TypeErr.UNAUTHENTICATED, "Auth expired");
   }
 
   static emailExists(): AppErr {
     return new AppErr(TypeErr.CONFLICT, "Email is already used");
   }
 
-  static idExists(): AppErr {
+  static IdentityNumberExists(): AppErr {
     return new AppErr(
       TypeErr.CONFLICT,
-      "An account with this ID number is already active",
+      "An account with this Identity number is already active",
     );
   }
 
