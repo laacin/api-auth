@@ -1,13 +1,18 @@
 import type { TokenService } from "@application/services";
-import { AppErr, ErrGeneric } from "@domain/errs";
+import { AppErr, ErrGeneric, ErrUserAuth, ErrUserRecovery } from "@domain/errs";
 import { type TokenPayload, TokenType } from "@domain/security";
-import { sign, verify, type SignOptions } from "jsonwebtoken";
+import {
+  sign,
+  TokenExpiredError,
+  verify,
+  type SignOptions,
+} from "jsonwebtoken";
 
 export class TokenServiceImpl implements TokenService {
   constructor(private readonly secretKey: string) {}
 
   async create(type: TokenType, id: string): Promise<string> {
-    const payload: TokenPayload = { type, id };
+    const payload: TokenPayload = { type, sub: id };
 
     let opts: SignOptions | undefined;
     switch (payload.type) {
@@ -29,14 +34,39 @@ export class TokenServiceImpl implements TokenService {
     return token;
   }
 
-  async verifyToken(token?: string): Promise<TokenPayload> {
-    if (!token) throw ErrGeneric.forbidden();
+  async verifyToken(token?: string, expected?: TokenType): Promise<string> {
+    if (!token) throw ErrGeneric.missingToken();
 
     try {
       const pay = verify(token, this.secretKey) as TokenPayload;
-      return pay;
+
+      if (!pay || !pay.sub || !pay.type) {
+        throw ErrGeneric.invalidToken();
+      }
+
+      if (expected && pay.type !== expected) {
+        throw ErrGeneric.invalidToken();
+      }
+
+      return pay.sub;
     } catch (err) {
-      throw err instanceof AppErr ? err : ErrGeneric.forbidden();
+      if (err instanceof AppErr) throw err;
+
+      if (err instanceof TokenExpiredError) {
+        if (!expected) throw ErrGeneric.invalidToken();
+        switch (expected) {
+          case TokenType.AUTHENTICATION:
+            throw ErrUserAuth.authExpired();
+          case TokenType.EMAIL_VALIDATION:
+            throw ErrUserRecovery.emailRecoveryExpired();
+          case TokenType.PASSWORD_RECOVERY:
+            throw ErrUserRecovery.passwordRecoveryExpired();
+          default:
+            ErrGeneric.invalidToken();
+        }
+      }
+
+      throw ErrGeneric.invalidToken();
     }
   }
 }

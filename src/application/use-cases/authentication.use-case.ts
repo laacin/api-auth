@@ -35,7 +35,8 @@ export class AuthenticationUseCase {
       const conflict = await this.userRepo.isAvailable(input.identifier);
       if (conflict) {
         if (conflict === "email") throw ErrUserAuth.emailExists();
-        if (conflict === "identity_number") throw ErrUserAuth.idExists();
+        if (conflict === "identity_number")
+          throw ErrUserAuth.IdentityNumberExists();
       }
 
       // Setup user
@@ -147,10 +148,12 @@ export class AuthenticationUseCase {
   async emailVerify(token: string): Promise<void> {
     try {
       // Check token
-      const payload = await this.tokenSvc.verifyToken(token);
-      if (payload.type !== TokenType.EMAIL_VALIDATION) return;
+      const id = await this.tokenSvc.verifyToken(
+        token,
+        TokenType.EMAIL_VALIDATION,
+      );
 
-      await this.userRepo.verifyEmail(payload.id);
+      await this.userRepo.verifyEmail(id);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
