@@ -16,7 +16,7 @@ export class RecoveryUseCase {
   ): Promise<string | undefined> {
     try {
       // Get user
-      const u = await this.userRepo.getUserByEmail(email, "identifier", "id");
+      const u = await this.userRepo.getUser({ email }, "identifier", "id");
       if (!u || u.identifier.identityNumber !== identityNumber) {
         return undefined;
       }
