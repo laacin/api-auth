@@ -84,7 +84,7 @@ export class ErrGeneric extends AppErr {
   }
 
   static forbidden(): AppErr {
-    return new AppErr(TypeErr.NOT_FOUND, "Access denied");
+    return new AppErr(TypeErr.FORBIDDEN, "Access denied");
   }
 
   static notFound(): AppErr {
