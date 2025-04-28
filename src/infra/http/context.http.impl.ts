@@ -1,9 +1,10 @@
 import { AppErr, ErrGeneric } from "@domain/errs";
 import type { Request, Response } from "@interfaces/http/context";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { IncomingMessage, type ServerResponse } from "node:http";
 import { bodyParser } from "./body-parser.http.impl";
 
 export class RequestImpl implements Request {
+  token: string | undefined;
   url: {
     path: string;
     params?: Record<string, string>;
@@ -14,9 +15,12 @@ export class RequestImpl implements Request {
 
   constructor(private req: IncomingMessage) {
     this.url = {
-      path: req.url ?? "",
+      path: req.url?.startsWith("/") ? req.url : "/",
     };
     this.method = req.method ?? "";
+    this.token = req.headers.authorization?.startsWith("Bearer")
+      ? req.headers.authorization.split(" ")[1]
+      : undefined;
   }
 
   async body(): Promise<Record<string, unknown>> {

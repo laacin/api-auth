@@ -113,6 +113,8 @@ export class Router {
       sub.execute();
     }
 
-    this.res.sendError(404, "Not found");
+    if (!this.res.sent) {
+      this.res.sendError(404, "Not found");
+    }
   }
 }

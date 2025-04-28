@@ -83,7 +83,7 @@ const pathSegments = (
   const abs = absolutePath[iteration];
   const prv = providePath[iteration];
 
-  if (!abs || !prv) {
+  if (abs === undefined || prv === undefined) {
     throw new Error("Unexpected error reading URL");
   }
 
