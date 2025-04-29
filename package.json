@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run src/main.ts",
     "test": "bun run test test/",
-    "tst": "bun run src/tst.ts"
+    "tst": "bun run test/tst.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

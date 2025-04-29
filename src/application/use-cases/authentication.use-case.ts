@@ -10,7 +10,7 @@ import type {
   UserPersonalInfo,
   UserSecurity,
 } from "@domain/entities";
-import { AppErr, ErrGeneric, ErrUserAuth, ErrUserRecovery } from "@domain/errs";
+import { AppErr, ErrGeneric, ErrUserAuth } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
 import { TokenType } from "@domain/security";
 
@@ -122,38 +122,6 @@ export class AuthenticationUseCase {
       await this.userRepo.newLogin(u.id, new Date());
 
       return token;
-    } catch (err) {
-      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
-    }
-  }
-
-  // ---- Validate email
-  async emailVerificationToken(id: string): Promise<string> {
-    try {
-      // Get user
-      const u = await this.userRepo.getUser({ id }, "security");
-      if (!u) throw ErrGeneric.internal("Unexpected undefined user");
-
-      // Check if is already verified
-      if (u.security.emailVerified)
-        throw ErrUserRecovery.emailIsAlreadyVerified();
-
-      // Generate token
-      return await this.tokenSvc.create(TokenType.EMAIL_VALIDATION, id);
-    } catch (err) {
-      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
-    }
-  }
-
-  async emailVerify(token: string): Promise<void> {
-    try {
-      // Check token
-      const id = await this.tokenSvc.verifyToken(
-        token,
-        TokenType.EMAIL_VALIDATION,
-      );
-
-      await this.userRepo.verifyEmail(id);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
