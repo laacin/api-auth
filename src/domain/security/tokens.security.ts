@@ -1,10 +1,48 @@
-export enum TokenType {
-  AUTHENTICATION = "AUTHENTICATION",
-  EMAIL_VALIDATION = "EMAIL_VALIDATION",
-  PASSWORD_RECOVERY = "PASSWORD_RECOVERY",
+export type TokenType =
+  | "access"
+  | "refresh"
+  | "email_validation"
+  | "email_recovery"
+  | "password_recovery";
+
+// => Authentication payloads
+interface AccessPayload {
+  sub: string;
+  email: string;
+  permissions: string[];
+  identity: string;
 }
 
-export interface TokenPayload {
+interface RefreshPayload {
   sub: string;
-  type: TokenType;
 }
+
+// => Recovery payloads
+interface EmailValidationPayload {
+  sub: string;
+}
+
+interface EmailRecoveryPayload {
+  sub: string;
+}
+
+interface PasswordRecoveryPayload {
+  sub: string;
+}
+
+interface Payload {
+  access: AccessPayload;
+  refresh: RefreshPayload;
+  email_validation: EmailValidationPayload;
+  email_recovery: EmailRecoveryPayload;
+  password_recovery: PasswordRecoveryPayload;
+}
+
+export type {
+  AccessPayload,
+  RefreshPayload,
+  EmailValidationPayload,
+  EmailRecoveryPayload,
+  PasswordRecoveryPayload,
+  Payload,
+};
