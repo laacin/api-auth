@@ -95,27 +95,15 @@ export class Router {
     this.registerRoute(MethodHttp.DELETE, path, ...controllers);
   }
 
-  logger(): void {
-    for (const routes of this.routes) {
-      const [a] = routes;
-      console.log(a);
-    }
-    for (const sub of this.subRouters) {
-      sub.routes.forEach((_v, k) => {
-        console.log(k);
-      });
-    }
-  }
-
   // Handle request
-  async execute(): Promise<void> {
+  private async handle(): Promise<boolean> {
     // Check if is already sent
-    if (this.res.sent) return;
+    if (this.res.sent) return true;
 
     // Global middleware
     if (this.globalMiddlewares.length > 0) {
       await execControllers(this.req, this.res, this.globalMiddlewares);
-      if (this.res.sent) return;
+      if (this.res.sent) return true;
     }
 
     // Routes
@@ -125,7 +113,7 @@ export class Router {
 
       // Middleware
       await execControllers(this.req, this.res, this.middlewares);
-      if (this.res.sent) return;
+      if (this.res.sent) return true;
 
       // Check method
       for (const end of endpoints) {
@@ -133,22 +121,30 @@ export class Router {
           // Matched! setup controllers =>
           setUrlProperties(this.req, path);
           await execControllers(this.req, this.res, end.controllers);
-          return;
+          return true;
         }
       }
 
       // 405 Error
       this.res.sendError(405, "Not method allowed");
-      return;
+      return true;
     }
 
     // Exec sub routers
     for (const sub of this.subRouters) {
-      if (!this.res.sent) await sub.execute();
+      if (await sub.handle()) return true;
     }
 
-    if (!this.res.sent) {
+    return false;
+  }
+
+  private checkHandle(handle: boolean): void {
+    if (!handle) {
       this.res.sendError(404, "Not found");
     }
+  }
+
+  async execute(): Promise<void> {
+    this.checkHandle(await this.handle());
   }
 }
