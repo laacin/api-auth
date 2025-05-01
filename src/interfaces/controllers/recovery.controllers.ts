@@ -5,12 +5,12 @@ import type { Controller } from "@interfaces/http";
 export class RecoveryControllers {
   constructor(private readonly recoveryUseCase: RecoveryUseCase) {}
 
-  sendEmailVerificationToken(): Controller {
+  sendEmailVerificationToken(path: string): Controller {
     return async (req, res) => {
       try {
         if (!req.userId) throw ErrGeneric.unauthenticated();
 
-        await this.recoveryUseCase.emailVerificationRequest(req.userId);
+        await this.recoveryUseCase.emailVerificationRequest(req.userId, path);
 
         res.sendSuccess(200, "Email verification was sent");
       } catch (err) {
