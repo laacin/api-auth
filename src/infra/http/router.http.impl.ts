@@ -1,6 +1,6 @@
-import type { Request, Response } from "@interfaces/http/context";
+import type { Request, Response, Controller } from "@interfaces/http";
 import { isMatchMethod, MethodHttp } from "./method.http.impl";
-import { execControllers, type Controller } from "./controllers.http.impl";
+import { execControllers } from "./controllers.http.impl";
 import { isMatchUrl, setUrlProperties } from "./url.http.impl";
 
 interface Endpoint {

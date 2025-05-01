@@ -1,10 +1,4 @@
-import type { Request, Response } from "@interfaces/http/context";
-
-export type Controller = (
-  req: Request,
-  res: Response,
-  next: () => void,
-) => void | Promise<void>;
+import type { Controller, Request, Response } from "@interfaces/http";
 
 export const execControllers = async (
   req: Request,

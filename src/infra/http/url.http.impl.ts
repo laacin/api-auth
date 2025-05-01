@@ -1,4 +1,4 @@
-import type { Request } from "@interfaces/http/context";
+import type { Request } from "@interfaces/http";
 
 // Read URL Method
 export const isMatchUrl = (req: Request, path: string): boolean => {

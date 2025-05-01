@@ -1,7 +1,7 @@
 import { AppErr, ErrGeneric } from "@domain/errs";
-import type { Request, Response } from "@interfaces/http/context";
 import { IncomingMessage, type ServerResponse } from "node:http";
 import { bodyParser } from "./body-parser.http.impl";
+import type { Request, Response } from "@interfaces/http";
 
 export class RequestImpl implements Request {
   token: string | undefined;

@@ -1,4 +1,4 @@
-import type { Request } from "@interfaces/http/context";
+import type { Request } from "@interfaces/http";
 
 export enum MethodHttp {
   GET = "GET",
