@@ -8,33 +8,52 @@ interface Endpoint {
   controllers: Controller[];
 }
 
+const checkPath = (path?: string): void => {
+  if (path) {
+    if (!path.startsWith("/") || path.endsWith("/")) {
+      throw new Error(
+        "Error: Path must start with '/' and must not end with '/'",
+      );
+    }
+
+    if (path.includes("?")) {
+      throw new Error("Error: Invalid path");
+    }
+  }
+};
+
 export class Router {
+  readonly basePath: string;
   private readonly subRouters: Router[] = [];
   private readonly routes = new Map<string, Endpoint[]>();
+  private readonly middlewares: Controller[] = [];
+  private readonly globalMiddlewares: Controller[];
 
   private constructor(
     private readonly req: Request,
     private readonly res: Response,
-    private mainPath: string = "",
-    private middlewares: Controller[],
-  ) {}
+    basePath?: string,
+    ...middlewares: Controller[]
+  ) {
+    this.basePath = basePath ?? "";
+    this.globalMiddlewares = middlewares;
+  }
 
   static create(
     req: Request,
     res: Response,
-    ...middlewares: Controller[]
+    basePath?: string,
+    ...globalMiddlewares: Controller[]
   ): Router {
-    return new Router(req, res, "", middlewares);
+    checkPath(basePath);
+    return new Router(req, res, basePath, ...globalMiddlewares);
   }
 
   // Sub Router
   subRouter(path: string, ...controllers: Controller[]): Router {
-    const sub = new Router(
-      this.req,
-      this.res,
-      this.mainPath + path,
-      controllers,
-    );
+    checkPath(path);
+    const sub = new Router(this.req, this.res, this.basePath + path);
+    sub.middlewares.push(...controllers);
     this.subRouters.push(sub);
     return sub;
   }
@@ -45,18 +64,14 @@ export class Router {
     path: string,
     ...controllers: Controller[]
   ): void {
-    const absPath = this.mainPath + path;
-    if (this.routes.has(absPath)) {
-      const endpoints = this.routes.get(absPath);
+    const routePath = this.basePath + path;
+    checkPath(path);
+    if (this.routes.has(routePath)) {
+      const endpoints = this.routes.get(routePath);
       endpoints?.push({ method, controllers });
     } else {
-      this.routes.set(absPath, [{ method, controllers }]);
+      this.routes.set(routePath, [{ method, controllers }]);
     }
-  }
-
-  // Middleware method
-  use(...middlewares: Controller[]): void {
-    this.middlewares.push(...middlewares);
   }
 
   // Methods
@@ -80,19 +95,37 @@ export class Router {
     this.registerRoute(MethodHttp.DELETE, path, ...controllers);
   }
 
+  logger(): void {
+    for (const routes of this.routes) {
+      const [a] = routes;
+      console.log(a);
+    }
+    for (const sub of this.subRouters) {
+      sub.routes.forEach((_v, k) => {
+        console.log(k);
+      });
+    }
+  }
+
   // Handle request
   async execute(): Promise<void> {
     // Check if is already sent
     if (this.res.sent) return;
 
-    // Middlewares
-    await execControllers(this.req, this.res, this.middlewares);
-    if (this.res.sent) return;
+    // Global middleware
+    if (this.globalMiddlewares.length > 0) {
+      await execControllers(this.req, this.res, this.globalMiddlewares);
+      if (this.res.sent) return;
+    }
 
     // Routes
     for (const [path, endpoints] of this.routes) {
       // Check URL
       if (!isMatchUrl(this.req, path)) continue;
+
+      // Middleware
+      await execControllers(this.req, this.res, this.middlewares);
+      if (this.res.sent) return;
 
       // Check method
       for (const end of endpoints) {

@@ -61,6 +61,7 @@ export class ResponseImpl implements Response {
   sendError(status: number, message: string): void {
     if (this.sent) return;
     this.sent = true;
+
     sendJson(this.res, status, { status, error: message });
   }
 
