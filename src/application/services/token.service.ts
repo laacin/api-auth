@@ -1,6 +1,15 @@
-import type { TokenType } from "@domain/security";
+import type { Payload } from "@domain/security";
 
 export interface TokenService {
-  create(type: TokenType, id: string): Promise<string>;
-  verifyToken(token: string | undefined, expected?: string): Promise<string>;
+  // Sign
+  create<T extends Payload, K extends keyof T>(
+    type: K,
+    payload: T[K],
+  ): Promise<string>;
+
+  // Verify
+  verifyToken<T extends Payload, K extends keyof T>(
+    token: string | undefined,
+    expected?: K,
+  ): Promise<T[K]>;
 }
