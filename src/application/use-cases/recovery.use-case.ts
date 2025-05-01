@@ -11,7 +11,7 @@ export class RecoveryUseCase {
   ) {}
 
   // ---- Validate email
-  async emailVerificationRequest(id: string): Promise<void> {
+  async emailVerificationRequest(id: string, path: string): Promise<void> {
     try {
       // Get user
       const u = await this.userRepo.getUser({ id });
@@ -24,7 +24,7 @@ export class RecoveryUseCase {
       // Generate token
       const token = await this.tokenSvc.create(TokenType.EMAIL_VALIDATION, id);
 
-      await this.emailSvc.sendVerifyEmail(u, token);
+      await this.emailSvc.sendVerifyEmail(u, token, path);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
@@ -46,7 +46,11 @@ export class RecoveryUseCase {
 
   // ---- Password recovery
   // Returns undefined if credentials are incorrect
-  async passwordToken(email: string, identityNumber: string): Promise<void> {
+  async passwordRecoveryRequest(
+    email: string,
+    identityNumber: string,
+    path: string,
+  ): Promise<void> {
     try {
       // Get user
       const u = await this.userRepo.getUser({ email });
@@ -59,7 +63,7 @@ export class RecoveryUseCase {
         u.id,
       );
 
-      await this.emailSvc.sendRecoveryPassword(u, token);
+      await this.emailSvc.sendRecoveryPassword(u, token, path);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }

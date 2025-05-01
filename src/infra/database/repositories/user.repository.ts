@@ -8,8 +8,8 @@ export class UserRepositoryImpl implements UserRepository {
 
   // ---- Create
   async saveUser(user: User): Promise<void> {
-    const toSave: Omit<User, "id"> = user;
-    const u = new this.model({ _id: user.id, ...toSave });
+    const { id, ...rest } = user;
+    const u = new this.model({ _id: id, ...rest });
     await u.save();
   }
 
