@@ -11,6 +11,7 @@ export enum TypeErr {
   NOT_IMPLEMENTED = "NOT_IMPLEMENTED",
 }
 
+// Error structure
 export class AppErr extends Error {
   protected constructor(
     public type: TypeErr,
@@ -55,7 +56,6 @@ export class AppErr extends Error {
   }
 }
 
-// Error structure
 export class ErrGeneric extends AppErr {
   // ---- INTERNAL ERRORS
   static internal(err: unknown): AppErr {
