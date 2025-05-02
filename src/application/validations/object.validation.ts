@@ -1,5 +1,5 @@
-import type { RulesFor } from "@domain/rules/types";
-import { validateField } from "./field.validation";
+import type { RulesFor } from "@domain/entities/types";
+import validateField from "./field.validation";
 
 const validateObject = <T>(
   rules: RulesFor<T>,

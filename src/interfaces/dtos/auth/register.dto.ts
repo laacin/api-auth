@@ -3,13 +3,13 @@ import type {
   UserAddress,
   UserIdentifier,
   UserPersonalInfo,
-} from "@domain/entities";
+} from "@domain/entities/user";
 import { ErrUserAuth } from "@domain/errs";
 import {
   rulesUserAddress,
   rulesUserIdentifier,
   rulesUserInfo,
-} from "@domain/rules";
+} from "@domain/entities/user/rules";
 
 export class RegisterDto {
   private constructor(

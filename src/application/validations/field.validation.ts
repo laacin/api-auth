@@ -1,4 +1,4 @@
-import type { Rules } from "@domain/rules/types";
+import type { Rules } from "@domain/entities/types";
 
 function validateField(target: unknown, rules?: Rules, info?: false): boolean;
 function validateField(
@@ -71,4 +71,4 @@ function validateField(
   return info ? null : true;
 }
 
-export { validateField };
+export default validateField;

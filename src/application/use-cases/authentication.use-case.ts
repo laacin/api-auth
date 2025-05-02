@@ -9,8 +9,7 @@ import type {
   UserAddress,
   UserIdentifier,
   UserPersonalInfo,
-  UserSecurity,
-} from "@domain/entities";
+} from "@domain/entities/user";
 import { AppErr, ErrGeneric, ErrUserAuth } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
 
@@ -79,37 +78,18 @@ export class AuthenticationUseCase {
   async login(
     creds: Partial<UserIdentifier>,
     ip?: string,
-  ): Promise<[string, string]> {
+  ): Promise<AuthTokens> {
     try {
       if (!creds.password) throw ErrUserAuth.invalidAuth();
 
       // Get user
-      let u:
-        | {
-            id: string;
-            identifier: UserIdentifier;
-            security: UserSecurity;
-            permissions: string[];
-          }
-        | undefined;
-
-      if (creds.email) {
-        u = await this.userRepo.getUser(
-          { email: creds.email },
-          "identifier",
-          "id",
-          "security",
-          "permissions",
-        );
-      } else if (creds.identityNumber) {
-        u = await this.userRepo.getUser(
-          { identityNumber: creds.identityNumber },
-          "identifier",
-          "id",
-          "security",
-          "permissions",
-        );
-      }
+      const u = await this.userRepo.getUser(
+        { email: creds.email, identityNumber: creds.identityNumber },
+        "id",
+        "identifier",
+        "security",
+        "permissions",
+      );
 
       // Compare credentials
       if (
@@ -127,21 +107,17 @@ export class AuthenticationUseCase {
       }
 
       // Generate token
-      const accessToken = await this.tokenSvc.create("access", {
-        sub: u.id,
+      const tokens = await generateAuthTokens(this.tokenSvc, {
+        id: u.id,
         email: u.identifier.email,
-        identity: u.identifier.identityNumber,
+        identityNumber: u.identifier.identityNumber,
         permissions: u.permissions,
-      });
-
-      const refreshToken = await this.tokenSvc.create("refresh", {
-        sub: u.id,
       });
 
       // Save login
       await this.userRepo.newLogin(u.id, new Date());
 
-      return [accessToken, refreshToken];
+      return tokens;
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
@@ -177,6 +153,7 @@ export class AuthenticationUseCase {
     }
   }
 
+  // ---- Two Factor Authentication
   async deleteTwoFactorAuth(id: string): Promise<void> {
     // Get user
     const u = await this.userRepo.getUser({ id }, "security");
@@ -216,9 +193,14 @@ export class AuthenticationUseCase {
     }
   }
 
-  async loginTwoFactor(id: string, code: string): Promise<[string, string]> {
+  async loginTwoFactor(id: string, code: string): Promise<AuthTokens> {
     // Get user
-    const u = await this.userRepo.getUser({ id });
+    const u = await this.userRepo.getUser(
+      { id },
+      "security",
+      "identifier",
+      "permissions",
+    );
     if (!u) {
       throw ErrGeneric.internal(
         "Unexpected undefined user at verifyTwoFactorAuth",
@@ -238,17 +220,44 @@ export class AuthenticationUseCase {
     }
 
     // Generate token
-    const accessToken = await this.tokenSvc.create("access", {
-      sub: u.id,
+    const tokens = await generateAuthTokens(this.tokenSvc, {
+      id,
       email: u.identifier.email,
-      identity: u.identifier.identityNumber,
+      identityNumber: u.identifier.identityNumber,
       permissions: u.permissions,
     });
 
-    const refreshToken = await this.tokenSvc.create("refresh", {
-      sub: u.id,
-    });
-
-    return [accessToken, refreshToken];
+    return tokens;
   }
 }
+
+// Helpers
+interface AuthTokens {
+  access: string;
+  refresh: string;
+}
+
+const generateAuthTokens = async (
+  service: TokenService,
+  data: {
+    id: string;
+    email: string;
+    identityNumber: string;
+    permissions: string[];
+  },
+): Promise<AuthTokens> => {
+  const [access, refresh] = await Promise.all([
+    service.create("access", {
+      sub: data.id,
+      email: data.email,
+      identity: data.identityNumber,
+      permissions: data.permissions,
+    }),
+
+    service.create("refresh", {
+      sub: data.id,
+    }),
+  ]);
+
+  return { access, refresh };
+};

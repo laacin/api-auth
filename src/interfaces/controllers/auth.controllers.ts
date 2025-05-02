@@ -1,6 +1,5 @@
 import type { AuthenticationUseCase } from "@application/use-cases";
-import { LoginDto } from "@interfaces/dtos/auth/login.dto";
-import { RegisterDto } from "@interfaces/dtos/auth/register.dto";
+import { LoginDto, RegisterDto } from "@interfaces/dtos/auth";
 import type { Controller } from "@interfaces/http";
 
 export class AuthControllers {
@@ -34,10 +33,10 @@ export class AuthControllers {
         const dto = LoginDto.create(data);
 
         // Use case
-        const token = await this.authUseCase.login(dto.identifier);
+        const tokens = await this.authUseCase.login(dto.identifier);
 
         // Response
-        res.sendSuccess(200, { token }, "Login successfully");
+        res.sendSuccess(200, { tokens }, "Login successfully");
       } catch (err) {
         res.sendThrow(err);
       }

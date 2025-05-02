@@ -1,4 +1,4 @@
-import type { User, UserIdentifier } from "@domain/entities";
+import type { User, UserIdentifier } from "@domain/entities/user";
 
 export interface UserRepository {
   // Create

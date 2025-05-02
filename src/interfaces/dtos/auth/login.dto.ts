@@ -1,8 +1,8 @@
-import { validateField } from "@application/validations/field.validation";
+import validateField from "@application/validations/field.validation";
 import validateObject from "@application/validations/object.validation";
-import type { UserIdentifier } from "@domain/entities";
+import { patterns, type ObjectRules } from "@domain/entities/types";
+import type { UserIdentifier } from "@domain/entities/user";
 import { ErrUserAuth } from "@domain/errs";
-import { patterns, type ObjectRules } from "@domain/rules/types";
 
 export class LoginDto {
   private constructor(public identifier: Partial<UserIdentifier>) {}
