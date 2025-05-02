@@ -2,6 +2,7 @@ import type {
   HashService,
   IdService,
   TokenService,
+  TwoFactorService,
 } from "@application/services";
 import type {
   User,
@@ -12,7 +13,6 @@ import type {
 } from "@domain/entities";
 import { AppErr, ErrGeneric, ErrUserAuth } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
-import { TokenType } from "@domain/security";
 
 export class AuthenticationUseCase {
   constructor(
@@ -22,6 +22,7 @@ export class AuthenticationUseCase {
     private readonly idSvc: IdService,
     private readonly hashSvc: HashService,
     private readonly tokenSvc: TokenService,
+    private readonly tfaSvc: TwoFactorService,
   ) {}
 
   // ---- Register & Login
@@ -75,13 +76,21 @@ export class AuthenticationUseCase {
     }
   }
 
-  async login(creds: Partial<UserIdentifier>, ip?: string): Promise<string> {
+  async login(
+    creds: Partial<UserIdentifier>,
+    ip?: string,
+  ): Promise<[string, string]> {
     try {
       if (!creds.password) throw ErrUserAuth.invalidAuth();
 
       // Get user
       let u:
-        | { id: string; identifier: UserIdentifier; security: UserSecurity }
+        | {
+            id: string;
+            identifier: UserIdentifier;
+            security: UserSecurity;
+            permissions: string[];
+          }
         | undefined;
 
       if (creds.email) {
@@ -90,6 +99,7 @@ export class AuthenticationUseCase {
           "identifier",
           "id",
           "security",
+          "permissions",
         );
       } else if (creds.identityNumber) {
         u = await this.userRepo.getUser(
@@ -97,6 +107,7 @@ export class AuthenticationUseCase {
           "identifier",
           "id",
           "security",
+          "permissions",
         );
       }
 
@@ -116,14 +127,128 @@ export class AuthenticationUseCase {
       }
 
       // Generate token
-      const token = await this.tokenSvc.create(TokenType.AUTHENTICATION, u.id);
+      const accessToken = await this.tokenSvc.create("access", {
+        sub: u.id,
+        email: u.identifier.email,
+        identity: u.identifier.identityNumber,
+        permissions: u.permissions,
+      });
+
+      const refreshToken = await this.tokenSvc.create("refresh", {
+        sub: u.id,
+      });
 
       // Save login
       await this.userRepo.newLogin(u.id, new Date());
 
-      return token;
+      return [accessToken, refreshToken];
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
+  }
+
+  async refreshToken(token: string | undefined): Promise<string> {
+    try {
+      // Check refresh token
+      const payload = await this.tokenSvc.verifyToken(token, "refresh");
+
+      // Get user
+      const user = await this.userRepo.getUser(
+        { id: payload.sub },
+        "id",
+        "identifier",
+        "permissions",
+      );
+      if (!user) {
+        throw ErrGeneric.internal("Unexpected undefined user at refresh token");
+      }
+
+      // New token
+      const accessToken = await this.tokenSvc.create("access", {
+        sub: user.id,
+        email: user.identifier.email,
+        identity: user.identifier.identityNumber,
+        permissions: user.permissions,
+      });
+
+      return accessToken;
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
+    }
+  }
+
+  async deleteTwoFactorAuth(id: string): Promise<void> {
+    // Get user
+    const u = await this.userRepo.getUser({ id }, "security");
+    if (!u) {
+      throw ErrGeneric.internal("Unexpected undefined user at delete 2FA");
+    }
+
+    if (u.security.twoFactorAuth) {
+      await this.userRepo.deleteTwoFactorAuth(id);
+    }
+  }
+
+  async createTwoFactorAuth(id: string): Promise<string> {
+    try {
+      // Get user
+      const u = await this.userRepo.getUser({ id }, "identifier", "security");
+      if (!u) {
+        throw ErrGeneric.internal("Unexpected undefined user at create 2FA");
+      }
+
+      // Check if is already enabled
+      if (u.security.twoFactorSecret) {
+        throw ErrGeneric.conflict();
+      }
+
+      const secret = this.tfaSvc.generateSecret();
+      const qr = await this.tfaSvc.createQrCode(
+        u.identifier.identityNumber,
+        secret,
+      );
+
+      await this.userRepo.saveTwoFactorSecret(id, secret);
+
+      return qr;
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
+    }
+  }
+
+  async loginTwoFactor(id: string, code: string): Promise<[string, string]> {
+    // Get user
+    const u = await this.userRepo.getUser({ id });
+    if (!u) {
+      throw ErrGeneric.internal(
+        "Unexpected undefined user at verifyTwoFactorAuth",
+      );
+    }
+
+    if (!u.security.twoFactorSecret) {
+      throw ErrUserAuth.notEnabled2FA();
+    }
+
+    if (!(await this.tfaSvc.validate(code, u.security.twoFactorSecret))) {
+      throw ErrUserAuth.invalid2FA();
+    }
+
+    if (!u.security.twoFactorAuth) {
+      await this.userRepo.activeTwoFactor(id);
+    }
+
+    // Generate token
+    const accessToken = await this.tokenSvc.create("access", {
+      sub: u.id,
+      email: u.identifier.email,
+      identity: u.identifier.identityNumber,
+      permissions: u.permissions,
+    });
+
+    const refreshToken = await this.tokenSvc.create("refresh", {
+      sub: u.id,
+    });
+
+    return [accessToken, refreshToken];
   }
 }

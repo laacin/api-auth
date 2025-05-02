@@ -1,7 +1,6 @@
 import type { EmailService, TokenService } from "@application/services";
 import { AppErr, ErrGeneric, ErrUserRecovery } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
-import { TokenType } from "@domain/security";
 
 export class RecoveryUseCase {
   constructor(
@@ -22,7 +21,7 @@ export class RecoveryUseCase {
         throw ErrUserRecovery.emailIsAlreadyVerified();
 
       // Generate token
-      const token = await this.tokenSvc.create(TokenType.EMAIL_VALIDATION, id);
+      const token = await this.tokenSvc.create("email_validation", { sub: id });
 
       await this.emailSvc.sendVerifyEmail(u, token, path);
     } catch (err) {
@@ -30,15 +29,15 @@ export class RecoveryUseCase {
     }
   }
 
-  async emailVerify(token: string): Promise<void> {
+  async emailVerify(token: string | undefined): Promise<void> {
     try {
       // Check token
-      const id = await this.tokenSvc.verifyToken(
+      const payload = await this.tokenSvc.verifyToken(
         token,
-        TokenType.EMAIL_VALIDATION,
+        "email_validation",
       );
 
-      await this.userRepo.verifyEmail(id);
+      await this.userRepo.verifyEmail(payload.sub);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
@@ -58,10 +57,9 @@ export class RecoveryUseCase {
         return;
       }
 
-      const token = await this.tokenSvc.create(
-        TokenType.PASSWORD_RECOVERY,
-        u.id,
-      );
+      const token = await this.tokenSvc.create("password_recovery", {
+        sub: u.id,
+      });
 
       await this.emailSvc.sendRecoveryPassword(u, token, path);
     } catch (err) {

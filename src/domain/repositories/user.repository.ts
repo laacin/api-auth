@@ -8,8 +8,6 @@ export interface UserRepository {
   isAvailable(
     check: Partial<UserIdentifier>,
   ): Promise<undefined | "email" | "identity_number">;
-  isEmailVerified(id: string): Promise<boolean>;
-  isTwoFactorEnabled(id: string): Promise<boolean>;
 
   // Read
   getUser(identifier: {
@@ -26,15 +24,16 @@ export interface UserRepository {
     ...which: K[]
   ): Promise<Pick<User, K> | undefined>;
 
-  getTwoFactorSecret(id: string): Promise<string>;
-
   // Update
+  updateMany(id: string, user: Partial<User>): Promise<void>;
   changeEmail(id: string, email: string): Promise<void>;
   changePassword(id: string, password: string): Promise<void>;
+  activeTwoFactor(id: string): Promise<void>;
   saveTwoFactorSecret(id: string, secret: string): Promise<void>;
   verifyEmail(id: string): Promise<void>;
   newLogin(id: string, time: Date): Promise<void>;
 
   // Delete
   deleteAccount(id: string, time: Date): Promise<void>;
+  deleteTwoFactorAuth(id: string): Promise<void>;
 }

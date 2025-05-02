@@ -14,6 +14,14 @@ export class ErrUserAuth extends AppErr {
     return new AppErr(TypeErr.UNAUTHENTICATED, "Two factor auth is required");
   }
 
+  static invalid2FA(): AppErr {
+    return new AppErr(TypeErr.UNAUTHENTICATED, "Invalid 2FA code");
+  }
+
+  static notEnabled2FA(): AppErr {
+    return new AppErr(TypeErr.UNAUTHENTICATED, "2FA is not enabled");
+  }
+
   static authExpired(): AppErr {
     return new AppErr(TypeErr.UNAUTHENTICATED, "Auth expired");
   }
