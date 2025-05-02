@@ -24,7 +24,6 @@ interface UserSecurity {
   emailVerified: boolean;
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
-  lastIp?: string;
   lastLogin?: Date;
 }
 
