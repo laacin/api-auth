@@ -1,3 +1,4 @@
+import type { UserCacheRepository } from "@application/cache/auth.cache";
 import type {
   HashService,
   IdService,
@@ -17,6 +18,8 @@ export class AuthenticationUseCase {
   constructor(
     // Repository
     private readonly userRepo: UserRepository,
+    // Cache
+    private readonly cache: UserCacheRepository,
     // Services
     private readonly idSvc: IdService,
     private readonly hashSvc: HashService,
@@ -236,6 +239,18 @@ export class AuthenticationUseCase {
       await this.userRepo.newLogin(id, new Date());
 
       return tokens;
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
+    }
+  }
+
+  async logout(tokens: AuthTokens): Promise<void> {
+    try {
+      // Tokens
+      await Promise.all([
+        this.cache.revokeToken(tokens.access),
+        this.cache.revokeToken(tokens.refresh),
+      ]);
     } catch (err) {
       throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
