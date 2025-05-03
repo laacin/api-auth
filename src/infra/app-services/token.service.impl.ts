@@ -1,6 +1,6 @@
 import type { TokenService } from "@application/services";
 import { AppErr, ErrGeneric, ErrUserAuth, ErrUserRecovery } from "@domain/errs";
-import { type TokenPayload, TokenType } from "@domain/security";
+import type { Payload } from "@domain/security";
 import {
   sign,
   TokenExpiredError,
@@ -8,65 +8,109 @@ import {
   type SignOptions,
 } from "jsonwebtoken";
 
+interface TokenEnvironment {
+  // Keys
+  secretKey: string;
+  // Expiration
+  accessExp: string;
+  refreshExp: string;
+}
+
 export class TokenServiceImpl implements TokenService {
-  constructor(private readonly secretKey: string) {}
+  constructor(private readonly tokenEnv: TokenEnvironment) {}
 
-  async create(type: TokenType, id: string): Promise<string> {
-    const payload: TokenPayload = { type, sub: id };
+  create<T extends Payload, K extends keyof T>(
+    type: K,
+    payload: T[K],
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      // Options
+      let opts: SignOptions | undefined;
+      switch (type as keyof Payload) {
+        case "access":
+          opts = {
+            algorithm: "HS256",
+            expiresIn: this.tokenEnv.accessExp as SignOptions["expiresIn"],
+          };
+          break;
+        case "refresh":
+          opts = {
+            algorithm: "HS256",
+            expiresIn: this.tokenEnv.refreshExp as SignOptions["expiresIn"],
+          };
+          break;
+        default:
+          reject(ErrGeneric.internal("Unexpected token type"));
+      }
 
-    let opts: SignOptions | undefined;
-    switch (payload.type) {
-      case TokenType.AUTHENTICATION:
-        opts = { algorithm: "HS256", expiresIn: "1h" };
-        break;
-      case TokenType.EMAIL_VALIDATION:
-        opts = { algorithm: "HS256", expiresIn: "30m" };
-        break;
-      case TokenType.PASSWORD_RECOVERY:
-        opts = { algorithm: "HS256", expiresIn: "15m" };
-        break;
-      default:
-        opts = { algorithm: "HS256", expiresIn: "1h" };
-    }
-
-    const token = sign(payload, this.secretKey, opts);
-
-    return token;
+      // Create token
+      try {
+        const content: Content = {
+          type: type as keyof Payload,
+          payload,
+        };
+        const token = sign(content, this.tokenEnv.secretKey, opts);
+        resolve(token);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  async verifyToken(token?: string, expected?: TokenType): Promise<string> {
-    if (!token) throw ErrGeneric.missingToken();
-
-    try {
-      const pay = verify(token, this.secretKey) as TokenPayload;
-
-      if (!pay || !pay.sub || !pay.type) {
-        throw ErrGeneric.invalidToken();
+  verifyToken<T extends Payload, K extends keyof T>(
+    token: string | undefined,
+    expected?: K,
+  ): Promise<T[K]> {
+    return new Promise<T[K]>((resolve, reject) => {
+      const key = expected as keyof Payload | undefined;
+      // Verify token
+      if (!token) {
+        reject(ErrGeneric.missingToken());
+        return;
       }
 
-      if (expected && pay.type !== expected) {
-        throw ErrGeneric.invalidToken();
-      }
-
-      return pay.sub;
-    } catch (err) {
-      if (err instanceof AppErr) throw err;
-
-      if (err instanceof TokenExpiredError) {
-        if (!expected) throw ErrGeneric.invalidToken();
-        switch (expected) {
-          case TokenType.AUTHENTICATION:
-            throw ErrUserAuth.authExpired();
-          case TokenType.EMAIL_VALIDATION:
-            throw ErrUserRecovery.emailRecoveryExpired();
-          case TokenType.PASSWORD_RECOVERY:
-            throw ErrUserRecovery.passwordRecoveryExpired();
-          default:
-            ErrGeneric.invalidToken();
+      try {
+        const content = verify(token, this.tokenEnv.secretKey) as Content;
+        if (key && key !== content.type) {
+          reject(ErrGeneric.invalidToken());
+          return;
         }
-      }
 
-      throw ErrGeneric.invalidToken();
-    }
+        resolve(content.payload as T[K]);
+      } catch (err) {
+        if (err instanceof AppErr) throw err;
+
+        if (err instanceof TokenExpiredError) {
+          if (!key) throw ErrGeneric.invalidToken();
+          switch (key) {
+            case "access":
+              throw ErrUserAuth.sessionExpired();
+
+            case "refresh":
+              throw ErrUserAuth.sessionExpired();
+
+            case "email_validation":
+              throw ErrUserRecovery.emailVerificationExpired();
+
+            case "email_recovery":
+              throw ErrUserRecovery.emailRecoveryExpired();
+
+            case "password_recovery":
+              throw ErrUserRecovery.passwordRecoveryExpired();
+
+            default:
+              throw ErrGeneric.internal("Unexpected invalid token type");
+          }
+        }
+
+        throw ErrGeneric.invalidToken();
+      }
+    });
   }
+}
+
+// Helper
+interface Content {
+  type: keyof Payload;
+  payload: unknown;
 }

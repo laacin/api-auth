@@ -1,5 +1,5 @@
 import type { EmailService } from "@application/services";
-import type { User } from "@domain/entities";
+import type { User } from "@domain/entities/user";
 import { createTransport, type Transporter } from "nodemailer";
 
 export class EmailServiceImpl implements EmailService {
