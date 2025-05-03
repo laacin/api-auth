@@ -22,8 +22,11 @@ export class ErrUserAuth extends AppErr {
     return new AppErr(TypeErr.UNAUTHENTICATED, "2FA is not enabled");
   }
 
-  static authExpired(): AppErr {
-    return new AppErr(TypeErr.UNAUTHENTICATED, "Auth expired");
+  static sessionExpired(): AppErr {
+    return new AppErr(
+      TypeErr.UNAUTHENTICATED,
+      "Session is no longer available",
+    );
   }
 
   static emailExists(): AppErr {
