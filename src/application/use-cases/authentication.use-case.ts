@@ -156,14 +156,18 @@ export class AuthenticationUseCase {
 
   // ---- Two Factor Authentication
   async deleteTwoFactorAuth(id: string): Promise<void> {
-    // Get user
-    const u = await this.userRepo.getUser({ id }, "security");
-    if (!u) {
-      throw ErrGeneric.internal("Unexpected undefined user at delete 2FA");
-    }
+    try {
+      // Get user
+      const u = await this.userRepo.getUser({ id }, "security");
+      if (!u) {
+        throw ErrGeneric.internal("Unexpected undefined user at delete 2FA");
+      }
 
-    if (u.security.twoFactorAuth) {
-      await this.userRepo.deleteTwoFactorAuth(id);
+      if (u.security.twoFactorAuth) {
+        await this.userRepo.deleteTwoFactorAuth(id);
+      }
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
   }
 
@@ -195,40 +199,46 @@ export class AuthenticationUseCase {
   }
 
   async loginTwoFactor(id: string, code: string): Promise<AuthTokens> {
-    // Get user
-    const u = await this.userRepo.getUser(
-      { id },
-      "security",
-      "identifier",
-      "permissions",
-    );
-    if (!u) {
-      throw ErrGeneric.internal(
-        "Unexpected undefined user at verifyTwoFactorAuth",
+    try {
+      // Get user
+      const u = await this.userRepo.getUser(
+        { id },
+        "security",
+        "identifier",
+        "permissions",
       );
+      if (!u) {
+        throw ErrGeneric.internal(
+          "Unexpected undefined user at verifyTwoFactorAuth",
+        );
+      }
+
+      if (!u.security.twoFactorSecret) {
+        throw ErrUserAuth.notEnabled2FA();
+      }
+
+      if (!(await this.tfaSvc.validate(code, u.security.twoFactorSecret))) {
+        throw ErrUserAuth.invalid2FA();
+      }
+
+      if (!u.security.twoFactorAuth) {
+        await this.userRepo.activeTwoFactor(id);
+      }
+
+      // Generate token
+      const tokens = await generateAuthTokens(this.tokenSvc, {
+        id,
+        email: u.identifier.email,
+        identityNumber: u.identifier.identityNumber,
+        permissions: u.permissions,
+      });
+
+      await this.userRepo.newLogin(id, new Date());
+
+      return tokens;
+    } catch (err) {
+      throw err instanceof AppErr ? err : ErrGeneric.internal(err);
     }
-
-    if (!u.security.twoFactorSecret) {
-      throw ErrUserAuth.notEnabled2FA();
-    }
-
-    if (!(await this.tfaSvc.validate(code, u.security.twoFactorSecret))) {
-      throw ErrUserAuth.invalid2FA();
-    }
-
-    if (!u.security.twoFactorAuth) {
-      await this.userRepo.activeTwoFactor(id);
-    }
-
-    // Generate token
-    const tokens = await generateAuthTokens(this.tokenSvc, {
-      id,
-      email: u.identifier.email,
-      identityNumber: u.identifier.identityNumber,
-      permissions: u.permissions,
-    });
-
-    return tokens;
   }
 }
 
