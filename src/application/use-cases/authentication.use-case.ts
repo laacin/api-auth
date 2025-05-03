@@ -57,6 +57,7 @@ export class AuthenticationUseCase {
         },
 
         security: {
+          trustedDevices: [],
           emailVerified: false,
           twoFactorAuth: false,
           lastLogin: undefined,
@@ -77,7 +78,7 @@ export class AuthenticationUseCase {
 
   async login(
     creds: Partial<UserIdentifier>,
-    ip?: string,
+    device?: string,
   ): Promise<AuthTokens> {
     try {
       if (!creds.password) throw ErrUserAuth.invalidAuth();
@@ -101,7 +102,7 @@ export class AuthenticationUseCase {
 
       // 2FA
       if (u.security.twoFactorAuth) {
-        if (u.security.lastIp && u.security.lastIp !== ip) {
+        if (!device || !u.security.trustedDevices.includes(device)) {
           throw ErrUserAuth.required2FA();
         }
       }
