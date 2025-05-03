@@ -1,5 +1,4 @@
 import type { TokenService } from "@application/services";
-import { TokenType } from "@domain/security";
 import type { Controller } from "@interfaces/http";
 
 export class AuthMiddleware {
@@ -8,11 +7,8 @@ export class AuthMiddleware {
   isAuth(): Controller {
     return async (req, res, next) => {
       try {
-        const id = await this.tokenSvc.verifyToken(
-          req.token,
-          TokenType.AUTHENTICATION,
-        );
-        req.setUser(id);
+        const payload = await this.tokenSvc.verifyToken(req.token, "access");
+        req.setUser(payload.sub);
 
         next();
       } catch (err) {
