@@ -1,36 +1,6 @@
 import { AppErr, ErrGeneric } from "@domain/errs";
-import { IncomingMessage, type ServerResponse } from "node:http";
-import { bodyParser } from "./body-parser.http.impl";
-import type { Request, Response } from "@interfaces/http";
-
-export class RequestImpl implements Request {
-  token: string | undefined;
-  url: {
-    path: string;
-    params?: Record<string, string>;
-    query?: Record<string, string>;
-  };
-  method: string;
-  userId: string = "";
-
-  constructor(private req: IncomingMessage) {
-    this.url = {
-      path: req.url?.startsWith("/") ? req.url : "/",
-    };
-    this.method = req.method ?? "";
-    this.token = req.headers.authorization?.startsWith("Bearer")
-      ? req.headers.authorization.split(" ")[1]
-      : undefined;
-  }
-
-  async body(): Promise<Record<string, unknown>> {
-    return bodyParser(this.req);
-  }
-
-  setUser(id: string): void {
-    this.userId = id;
-  }
-}
+import type { Response } from "@interfaces/http";
+import { ServerResponse } from "node:http";
 
 export class ResponseImpl implements Response {
   constructor(private readonly res: ServerResponse) {}

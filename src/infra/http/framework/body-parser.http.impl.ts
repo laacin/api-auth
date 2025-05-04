@@ -1,4 +1,3 @@
-import { ErrGeneric } from "@domain/errs";
 import { IncomingMessage } from "node:http";
 import { StringDecoder } from "node:string_decoder";
 
@@ -19,8 +18,8 @@ export const bodyParser = (
       try {
         const parsed = JSON.parse(buffer);
         resolve(parsed as Record<string, unknown>);
-      } catch {
-        reject(ErrGeneric.invalidArgument());
+      } catch (err) {
+        reject(err);
       }
     });
 

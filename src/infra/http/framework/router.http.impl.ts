@@ -1,26 +1,12 @@
 import type { Request, Response, Controller } from "@interfaces/http";
 import { isMatchMethod, MethodHttp } from "./method.http.impl";
 import { execControllers } from "./controllers.http.impl";
-import { isMatchUrl, setUrlProperties } from "./url.http.impl";
+import { checkPath, isMatchUrl, setUrlProperties } from "./url.http.impl";
 
 interface Endpoint {
   method: MethodHttp;
   controllers: Controller[];
 }
-
-const checkPath = (path?: string): void => {
-  if (path) {
-    if (!path.startsWith("/") || path.endsWith("/")) {
-      throw new Error(
-        "Error: Path must start with '/' and must not end with '/'",
-      );
-    }
-
-    if (path.includes("?")) {
-      throw new Error("Error: Invalid path");
-    }
-  }
-};
 
 export class Router {
   readonly basePath: string;

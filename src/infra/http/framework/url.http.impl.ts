@@ -3,9 +3,11 @@ import type { Request } from "@interfaces/http";
 // Read URL Method
 export const isMatchUrl = (req: Request, path: string): boolean => {
   // Check is valid URLs
-  if (!req.url.path.startsWith("/") || !path.startsWith("/")) {
-    throw new Error("Invalid URL");
+  if (!req.url.path.startsWith("/")) {
+    throw new Error("Invalid request URL");
   }
+
+  checkPath(path);
 
   // Split URLs
   const absoluteSplit = req.url.path.slice(1).split("/");
@@ -72,6 +74,20 @@ export const setUrlProperties = (req: Request, path: string): void => {
 
   req.url.params = params;
   req.url.query = query;
+};
+
+export const checkPath = (path?: string): void => {
+  if (path) {
+    if (!path.startsWith("/") || path.endsWith("/")) {
+      throw new Error(
+        "Error: Path must start with '/' and must not end with '/'",
+      );
+    }
+
+    if (path.includes("?")) {
+      throw new Error("Error: Invalid path");
+    }
+  }
 };
 
 // Helpers
