@@ -3,7 +3,8 @@ export type TokenType =
   | "refresh"
   | "email_validation"
   | "email_recovery"
-  | "password_recovery";
+  | "password_recovery"
+  | "device_info";
 
 // => Authentication payloads
 interface AccessPayload {
@@ -30,12 +31,18 @@ interface PasswordRecoveryPayload {
   sub: string;
 }
 
+interface DeviceInfoPayload {
+  sub: string;
+  name: string;
+}
+
 interface Payload {
   access: AccessPayload;
   refresh: RefreshPayload;
   email_validation: EmailValidationPayload;
   email_recovery: EmailRecoveryPayload;
   password_recovery: PasswordRecoveryPayload;
+  device_info: DeviceInfoPayload;
 }
 
 export type {
@@ -44,5 +51,6 @@ export type {
   EmailValidationPayload,
   EmailRecoveryPayload,
   PasswordRecoveryPayload,
+  DeviceInfoPayload,
   Payload,
 };

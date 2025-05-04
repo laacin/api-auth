@@ -31,6 +31,12 @@ export class RequestImpl implements Request {
       cookieAuth: auth_token,
       deviceToken: device_token,
     };
+    this.client.device = {
+      userId: "",
+      deviceId: "",
+      deviceName: "",
+      userAgent: req.headers["user-agent"],
+    };
   }
 
   // Inherit
@@ -42,11 +48,6 @@ export class RequestImpl implements Request {
   };
   method: string;
 
-  // Extras
-  tokens: Tokens = {};
-  setter: Setter = new Setter(this);
-
-  // Methods
   async body(): Promise<Record<string, unknown>> {
     try {
       return await bodyParser(this.req);
@@ -54,6 +55,10 @@ export class RequestImpl implements Request {
       throw ErrGeneric.invalidArgument();
     }
   }
+
+  // Extras
+  tokens: Tokens = {};
+  setter: Setter = new Setter(this);
 }
 
 // Helpers

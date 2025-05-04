@@ -57,11 +57,18 @@ export class TokenServiceImpl implements TokenService {
     });
   }
 
+  verifyToken(token: string | undefined): Promise<string>;
+  verifyToken<T extends Payload, K extends keyof T>(
+    token: string | undefined,
+    expected: K,
+    strict?: boolean,
+  ): Promise<T[K]>;
   verifyToken<T extends Payload, K extends keyof T>(
     token: string | undefined,
     expected?: K,
-  ): Promise<T[K]> {
-    return new Promise<T[K]>((resolve, reject) => {
+    strict?: boolean,
+  ): Promise<string | T[K]> {
+    return new Promise<string | T[K]>((resolve, reject) => {
       const key = expected as keyof Payload | undefined;
       // Verify token
       if (!token) {
@@ -70,13 +77,17 @@ export class TokenServiceImpl implements TokenService {
       }
 
       try {
-        const content = verify(token, this.tokenEnv.secretKey) as Content;
-        if (key && key !== content.type) {
+        const content = verify(token, this.tokenEnv.secretKey);
+        if (strict && key && key !== (content as Content).type) {
           reject(ErrGeneric.invalidToken());
           return;
         }
 
-        resolve(content.payload as T[K]);
+        const result = expected
+          ? ((content as Content).payload as T[K])
+          : (content as string);
+
+        resolve(result);
       } catch (err) {
         if (err instanceof AppErr) throw err;
 
@@ -99,7 +110,7 @@ export class TokenServiceImpl implements TokenService {
               throw ErrUserRecovery.passwordRecoveryExpired();
 
             default:
-              throw ErrGeneric.internal("Unexpected invalid token type");
+              throw ErrGeneric.invalidToken();
           }
         }
 

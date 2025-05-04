@@ -1,9 +1,11 @@
-import type { Controller, Request, Response } from "@interfaces/http";
+import type { ControllerImpl } from "../controller.impl";
+import type { RequestImpl } from "../request.impl";
+import type { ResponseImpl } from "../response.impl";
 
 export const execControllers = async (
-  req: Request,
-  res: Response,
-  controllers: Controller[],
+  req: RequestImpl,
+  res: ResponseImpl,
+  controllers: ControllerImpl[],
 ): Promise<void> => {
   let index = 0;
 

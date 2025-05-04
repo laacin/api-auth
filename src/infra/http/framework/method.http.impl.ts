@@ -1,4 +1,4 @@
-import type { Request } from "@interfaces/http";
+import type { RequestImpl } from "../request.impl";
 
 export enum MethodHttp {
   GET = "GET",
@@ -8,6 +8,9 @@ export enum MethodHttp {
   DELETE = "DELETE",
 }
 
-export const isMatchMethod = (req: Request, method: MethodHttp): boolean => {
+export const isMatchMethod = (
+  req: RequestImpl,
+  method: MethodHttp,
+): boolean => {
   return req.method === method;
 };

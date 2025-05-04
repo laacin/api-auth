@@ -1,42 +1,44 @@
-import type { Request, Response, Controller } from "@interfaces/http";
 import { isMatchMethod, MethodHttp } from "./method.http.impl";
 import { execControllers } from "./controllers.http.impl";
 import { checkPath, isMatchUrl, setUrlProperties } from "./url.http.impl";
+import type { RequestImpl } from "../request.impl";
+import type { ResponseImpl } from "../response.impl";
+import type { ControllerImpl } from "../controller.impl";
 
 interface Endpoint {
   method: MethodHttp;
-  controllers: Controller[];
+  controllers: ControllerImpl[];
 }
 
 export class Router {
   readonly basePath: string;
   private readonly subRouters: Router[] = [];
   private readonly routes = new Map<string, Endpoint[]>();
-  private readonly middlewares: Controller[] = [];
-  private readonly globalMiddlewares: Controller[];
+  private readonly middlewares: ControllerImpl[] = [];
+  private readonly globalMiddlewares: ControllerImpl[];
 
   private constructor(
-    private readonly req: Request,
-    private readonly res: Response,
+    private readonly req: RequestImpl,
+    private readonly res: ResponseImpl,
     basePath?: string,
-    ...middlewares: Controller[]
+    ...middlewares: ControllerImpl[]
   ) {
     this.basePath = basePath ?? "";
     this.globalMiddlewares = middlewares;
   }
 
   static create(
-    req: Request,
-    res: Response,
+    req: RequestImpl,
+    res: ResponseImpl,
     basePath?: string,
-    ...globalMiddlewares: Controller[]
+    ...globalMiddlewares: ControllerImpl[]
   ): Router {
     checkPath(basePath);
     return new Router(req, res, basePath, ...globalMiddlewares);
   }
 
   // Sub Router
-  subRouter(path: string, ...controllers: Controller[]): Router {
+  subRouter(path: string, ...controllers: ControllerImpl[]): Router {
     checkPath(path);
     const sub = new Router(this.req, this.res, this.basePath + path);
     sub.middlewares.push(...controllers);
@@ -48,7 +50,7 @@ export class Router {
   private registerRoute(
     method: MethodHttp,
     path: string,
-    ...controllers: Controller[]
+    ...controllers: ControllerImpl[]
   ): void {
     const routePath = this.basePath + path;
     checkPath(path);
@@ -61,23 +63,23 @@ export class Router {
   }
 
   // Methods
-  post(path: string, ...controllers: Controller[]): void {
+  post(path: string, ...controllers: ControllerImpl[]): void {
     this.registerRoute(MethodHttp.POST, path, ...controllers);
   }
 
-  get(path: string, ...controllers: Controller[]): void {
+  get(path: string, ...controllers: ControllerImpl[]): void {
     this.registerRoute(MethodHttp.GET, path, ...controllers);
   }
 
-  put(path: string, ...controllers: Controller[]): void {
+  put(path: string, ...controllers: ControllerImpl[]): void {
     this.registerRoute(MethodHttp.PUT, path, ...controllers);
   }
 
-  patch(path: string, ...controllers: Controller[]): void {
+  patch(path: string, ...controllers: ControllerImpl[]): void {
     this.registerRoute(MethodHttp.PATCH, path, ...controllers);
   }
 
-  delete(path: string, ...controllers: Controller[]): void {
+  delete(path: string, ...controllers: ControllerImpl[]): void {
     this.registerRoute(MethodHttp.DELETE, path, ...controllers);
   }
 

@@ -8,8 +8,10 @@ export interface TokenService {
   ): Promise<string>;
 
   // Verify
+  verifyToken(token: string | undefined): Promise<string>;
   verifyToken<T extends Payload, K extends keyof T>(
     token: string | undefined,
-    expected?: K,
+    expected: K,
+    strict?: boolean,
   ): Promise<T[K]>;
 }

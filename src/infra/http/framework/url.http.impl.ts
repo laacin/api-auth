@@ -1,7 +1,7 @@
-import type { Request } from "@interfaces/http";
+import type { RequestImpl } from "../request.impl";
 
 // Read URL Method
-export const isMatchUrl = (req: Request, path: string): boolean => {
+export const isMatchUrl = (req: RequestImpl, path: string): boolean => {
   // Check is valid URLs
   if (!req.url.path.startsWith("/")) {
     throw new Error("Invalid request URL");
@@ -34,7 +34,7 @@ export const isMatchUrl = (req: Request, path: string): boolean => {
   return true;
 };
 
-export const setUrlProperties = (req: Request, path: string): void => {
+export const setUrlProperties = (req: RequestImpl, path: string): void => {
   // Split URLs
   const absoluteSplit = req.url.path.slice(1).split("/");
   const provideSplit = path.slice(1).split("/");

@@ -8,9 +8,12 @@ export class RecoveryControllers {
   sendEmailVerificationToken(path: string): Controller {
     return async (req, res) => {
       try {
-        if (!req.userId) throw ErrGeneric.unauthenticated();
+        if (!req.client.user) throw ErrGeneric.unauthenticated();
 
-        await this.recoveryUseCase.emailVerificationRequest(req.userId, path);
+        await this.recoveryUseCase.emailVerificationRequest(
+          req.client.user.id,
+          path,
+        );
 
         res.sendSuccess(200, "Email verification was sent");
       } catch (err) {
