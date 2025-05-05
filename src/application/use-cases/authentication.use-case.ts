@@ -9,7 +9,7 @@ import type {
   User,
   UserAddress,
   UserIdentifier,
-  UserPersonalInfo,
+  UserProfile,
 } from "@domain/entities/user";
 import { AppErr, ErrGeneric, ErrUserAuth } from "@domain/errs";
 import type { UserRepository } from "@domain/repositories";
@@ -30,7 +30,7 @@ export class AuthenticationUseCase {
   // ---- Register & Login
   async createAccount(input: {
     identifier: UserIdentifier;
-    personalInfo: UserPersonalInfo;
+    profile: UserProfile;
     address: UserAddress;
   }): Promise<void> {
     try {
@@ -68,7 +68,7 @@ export class AuthenticationUseCase {
 
         permissions: ["NOT_IMPLEMENTED"],
 
-        personalInfo: input.personalInfo,
+        profile: input.profile,
         address: input.address,
       };
 

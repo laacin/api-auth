@@ -1,9 +1,5 @@
 import { patterns, type RulesFor } from "../types";
-import type {
-  UserAddress,
-  UserIdentifier,
-  UserPersonalInfo,
-} from "./user.entity";
+import type { UserAddress, UserIdentifier, UserProfile } from "./user.entity";
 
 export const rulesUserIdentifier: RulesFor<UserIdentifier> = {
   email: {
@@ -29,7 +25,7 @@ export const rulesUserIdentifier: RulesFor<UserIdentifier> = {
   },
 };
 
-export const rulesUserInfo: RulesFor<UserPersonalInfo> = {
+export const rulesUserInfo: RulesFor<UserProfile> = {
   firstname: {
     name: "firstname",
     type: "",

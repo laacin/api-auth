@@ -7,9 +7,8 @@ export interface User {
   identifier: UserIdentifier;
   security: UserSecurity;
   permissions: string[];
-  personalInfo: UserPersonalInfo;
+  profile: UserProfile;
   address?: UserAddress;
-  experience?: UserExperience;
   logs: UserLogs;
 }
 
@@ -24,11 +23,11 @@ interface UserSecurity {
   emailVerified: boolean;
   twoFactorAuth: boolean;
   twoFactorSecret?: string;
-  trustedDevices: string[];
   lastLogin?: Date;
+  trustedDevices: TrustedDevice[];
 }
 
-interface UserPersonalInfo {
+interface UserProfile {
   firstname: string;
   lastname: string;
   birthdate: Date;
@@ -43,22 +42,23 @@ interface UserAddress {
   address: string;
 }
 
-interface UserExperience {
-  investmentExperience: string;
-  riskTolerance: string;
-}
-
 interface UserLogs {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
 }
 
+// Extras
+interface TrustedDevice {
+  deviceId: string;
+  deviceName: string;
+}
+
 export type {
   UserIdentifier,
   UserSecurity,
-  UserPersonalInfo,
+  UserProfile,
   UserAddress,
-  UserExperience,
   UserLogs,
+  TrustedDevice,
 };

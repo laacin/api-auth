@@ -2,7 +2,7 @@ import validateObject from "@application/validations/object.validation";
 import type {
   UserAddress,
   UserIdentifier,
-  UserPersonalInfo,
+  UserProfile,
 } from "@domain/entities/user";
 import { ErrUserAuth } from "@domain/errs";
 import {
@@ -14,7 +14,7 @@ import {
 export class RegisterDto {
   private constructor(
     public identifier: UserIdentifier,
-    public personalInfo: UserPersonalInfo,
+    public profile: UserProfile,
     public address: UserAddress,
   ) {}
 
