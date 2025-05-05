@@ -6,6 +6,7 @@ import type {
   TwoFactorService,
 } from "@application/services";
 import type {
+  TrustedDevice,
   User,
   UserAddress,
   UserIdentifier,
@@ -81,7 +82,7 @@ export class AuthenticationUseCase {
 
   async login(
     creds: Partial<UserIdentifier>,
-    device?: string,
+    device?: TrustedDevice,
   ): Promise<AuthTokens> {
     try {
       if (!creds.password) throw ErrUserAuth.invalidAuth();
@@ -104,6 +105,7 @@ export class AuthenticationUseCase {
       }
 
       // 2FA
+
       if (u.security.twoFactorAuth) {
         if (!device || !u.security.trustedDevices.includes(device)) {
           throw ErrUserAuth.required2FA();
@@ -119,7 +121,7 @@ export class AuthenticationUseCase {
       });
 
       // Save login
-      await this.userRepo.newLogin(u.id, new Date());
+      await this.userRepo.newLogin(u.id);
 
       return tokens;
     } catch (err) {
@@ -236,7 +238,7 @@ export class AuthenticationUseCase {
         permissions: u.permissions,
       });
 
-      await this.userRepo.newLogin(id, new Date());
+      await this.userRepo.newLogin(id);
 
       return tokens;
     } catch (err) {
