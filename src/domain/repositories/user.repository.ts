@@ -31,9 +31,9 @@ export interface UserRepository {
   activeTwoFactor(id: string): Promise<void>;
   saveTwoFactorSecret(id: string, secret: string): Promise<void>;
   verifyEmail(id: string): Promise<void>;
-  newLogin(id: string, time: Date): Promise<void>;
+  newLogin(id: string): Promise<void>;
 
   // Delete
-  deleteAccount(id: string, time: Date): Promise<void>;
+  deleteAccount(id: string): Promise<void>;
   deleteTwoFactorAuth(id: string): Promise<void>;
 }
