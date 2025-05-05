@@ -1,10 +1,12 @@
-import type { User, UserIdentifier } from "@domain/entities";
 import type { UserRepository } from "@domain/repositories";
-import type { Model } from "mongoose";
-import type { UserDocument } from "../models";
+import type { userModel } from "../models/user/user.model";
+import type { User, UserIdentifier, UserSecurity } from "@domain/entities/user";
+import type { Document } from "mongoose";
+
+type UserModel = typeof userModel;
 
 export class UserRepositoryImpl implements UserRepository {
-  constructor(private readonly model: Model<UserDocument>) {}
+  constructor(private readonly model: UserModel) {}
 
   // ---- Create
   async saveUser(user: User): Promise<void> {
@@ -73,7 +75,7 @@ export class UserRepositoryImpl implements UserRepository {
     ...which: K[]
   ): Promise<User | Pick<User, K> | undefined> {
     // Find user
-    let u: UserDocument | null | undefined;
+    let u: (User & Document) | null | undefined;
     if (identifier.id) {
       u = await this.model.findById(identifier.id);
     } else if (identifier.email) {
@@ -85,26 +87,23 @@ export class UserRepositoryImpl implements UserRepository {
     }
 
     if (!u || u.logs.deletedAt) return undefined;
-    const result = toEntity(u.toObject());
 
-    if (!which || which.length < 1) return result;
+    if (!which || which.length < 1) return toEntity(u);
 
     const data: Partial<Pick<User, K>> = {};
     for (const k of which) {
-      data[k] = result[k];
+      data[k] = u[k];
     }
 
     return data as Pick<User, K>;
   }
 
-  async getTwoFactorSecret(id: string): Promise<string> {
-    const u = await this.model.findById(id);
-    if (!u) throw new Error("Invalid user ID");
-
-    return u.security.twoFactorSecret ?? "";
+  // Update
+  async updateMany(id: string, user: Partial<User>): Promise<void> {
+    const u = await this.model.findByIdAndUpdate(id, user);
+    if (!u) throw invalidId;
   }
 
-  // Update
   async changeEmail(id: string, email: string): Promise<void> {
     const u = await this.model.findByIdAndUpdate(id, {
       "identifier.email": email,
@@ -147,10 +146,22 @@ export class UserRepositoryImpl implements UserRepository {
     });
     if (!u) throw invalidId;
   }
+
+  async deleteTwoFactorAuth(id: string): Promise<void> {
+    const upd: Partial<UserSecurity> = {
+      twoFactorAuth: false,
+      twoFactorSecret: undefined,
+    };
+
+    const u = await this.model.findByIdAndUpdate(id, {
+      $set: { security: upd },
+    });
+    if (!u) throw invalidId;
+  }
 }
 
 // TODO: fix this =>
-const toEntity = (doc: UserDocument): User => {
+const toEntity = (doc: User & Document): User => {
   return {
     id: doc._id as string,
 
@@ -164,23 +175,18 @@ const toEntity = (doc: UserDocument): User => {
       emailVerified: doc.security.emailVerified,
       twoFactorAuth: doc.security.twoFactorAuth,
       twoFactorSecret: doc.security.twoFactorSecret,
-      lastIp: doc.security.lastIp,
       lastLogin: doc.security.lastLogin,
+      trustedDevices: doc.security.trustedDevices,
     },
 
     permissions: doc.permissions,
 
-    personalInfo: {
-      firstname: doc.personalInfo.firstname,
-      lastname: doc.personalInfo.lastname,
-      birthdate: doc.personalInfo.birthdate,
-      nationality: doc.personalInfo.nationality,
-      gender: doc.personalInfo.gender,
-    },
-
-    experience: {
-      investmentExperience: doc.experience?.investmentExperience ?? "",
-      riskTolerance: doc.experience?.riskTolerance ?? "",
+    profile: {
+      firstname: doc.profile.firstname,
+      lastname: doc.profile.lastname,
+      birthdate: doc.profile.birthdate,
+      nationality: doc.profile.nationality,
+      gender: doc.profile.gender,
     },
 
     logs: {
