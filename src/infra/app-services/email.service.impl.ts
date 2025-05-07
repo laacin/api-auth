@@ -2,18 +2,24 @@ import type { EmailService } from "@application/services";
 import type { User } from "@domain/entities/user";
 import { createTransport, type Transporter } from "nodemailer";
 
+interface Environment {
+  baseUrl: string;
+  user: string;
+  password: string;
+}
+
 export class EmailServiceImpl implements EmailService {
   private readonly transport: Transporter;
   private readonly baseUrl: string;
   private readonly user: string;
-  constructor(baseUrl: string, user: string, password: string) {
-    this.baseUrl = baseUrl;
-    this.user = user;
+  constructor(env: Environment) {
+    this.baseUrl = env.baseUrl;
+    this.user = env.user;
     this.transport = createTransport({
       service: "gmail",
       auth: {
-        user: user,
-        pass: password,
+        user: env.user,
+        pass: env.password,
       },
     });
   }
